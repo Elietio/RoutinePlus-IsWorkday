@@ -25,6 +25,9 @@ class SettingsViewModel @Inject constructor(
     private val _fallbackUrl = MutableStateFlow(HolidayRepository.DEFAULT_FALLBACK_URL)
     val fallbackUrl: StateFlow<String> = _fallbackUrl.asStateFlow()
 
+    private val _themeMode = MutableStateFlow(0) // 0 = System, 1 = Light, 2 = Dark
+    val themeMode: StateFlow<Int> = _themeMode.asStateFlow()
+
     private val _saved = MutableStateFlow(false)
     val saved: StateFlow<Boolean> = _saved.asStateFlow()
 
@@ -33,17 +36,20 @@ class SettingsViewModel @Inject constructor(
             val prefs = dataStore.data.first()
             _primaryUrl.value = prefs[HolidayRepository.KEY_PRIMARY_URL] ?: HolidayRepository.DEFAULT_PRIMARY_URL
             _fallbackUrl.value = prefs[HolidayRepository.KEY_FALLBACK_URL] ?: HolidayRepository.DEFAULT_FALLBACK_URL
+            _themeMode.value = prefs[HolidayRepository.KEY_THEME_MODE] ?: 0
         }
     }
 
     fun updatePrimaryUrl(url: String) { _primaryUrl.value = url }
     fun updateFallbackUrl(url: String) { _fallbackUrl.value = url }
+    fun updateThemeMode(mode: Int) { _themeMode.value = mode }
 
     fun save() {
         viewModelScope.launch {
             dataStore.edit { prefs ->
                 prefs[HolidayRepository.KEY_PRIMARY_URL] = _primaryUrl.value
                 prefs[HolidayRepository.KEY_FALLBACK_URL] = _fallbackUrl.value
+                prefs[HolidayRepository.KEY_THEME_MODE] = _themeMode.value
             }
             _saved.value = true
         }

@@ -13,6 +13,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -32,6 +34,7 @@ fun SettingsScreen(
 ) {
     val primaryUrl by viewModel.primaryUrl.collectAsState()
     val fallbackUrl by viewModel.fallbackUrl.collectAsState()
+    val themeMode by viewModel.themeMode.collectAsState()
     val saved by viewModel.saved.collectAsState()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -53,7 +56,31 @@ fun SettingsScreen(
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("主题设置", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(12.dp))
+                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                    val options = listOf("跟随系统", "浅色", "深色")
+                    options.forEachIndexed { index, label ->
+                        SegmentedButton(
+                            selected = themeMode == index,
+                            onClick = { viewModel.updateThemeMode(index) },
+                            shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(index = index, count = options.size)
+                        ) {
+                            Text(label)
+                        }
+                    }
+                }
+            }
+        }
+        
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("数据源配置", style = MaterialTheme.typography.titleMedium)

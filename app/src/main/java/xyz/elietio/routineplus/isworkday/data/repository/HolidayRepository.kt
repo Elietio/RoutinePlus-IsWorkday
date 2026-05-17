@@ -26,6 +26,7 @@ class HolidayRepository @Inject constructor(
         private const val TAG = "HolidayRepository"
         val KEY_PRIMARY_URL = stringPreferencesKey("primary_url")
         val KEY_FALLBACK_URL = stringPreferencesKey("fallback_url")
+        val KEY_THEME_MODE = androidx.datastore.preferences.core.intPreferencesKey("theme_mode")
         const val DEFAULT_PRIMARY_URL = "https://cdn.jsdelivr.net/gh/NateScarlet/holiday-cn@master"
         const val DEFAULT_FALLBACK_URL = "https://fastly.jsdelivr.net/gh/NateScarlet/holiday-cn@master"
         val CHINA_ZONE: ZoneId = ZoneId.of("Asia/Shanghai")
