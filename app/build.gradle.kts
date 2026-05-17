@@ -15,8 +15,17 @@ android {
         applicationId = "xyz.elietio.routineplus.isworkday"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
+    }
+
+    applicationVariants.all {
+        val variantName = name
+        val versionName = defaultConfig.versionName
+        outputs.all {
+            val outputImpl = this as com.android.build.gradle.internal.api.BaseVariantOutputImpl
+            outputImpl.outputFileName = "RoutinePlus_IsWorkday_v${versionName}_${variantName}.apk"
+        }
     }
 
     signingConfigs {

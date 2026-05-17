@@ -53,7 +53,7 @@ fun SettingsScreen(
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("数据源配置", style = MaterialTheme.typography.titleMedium)
@@ -99,13 +99,13 @@ fun SettingsScreen(
 
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("关于", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Text("RoutinePlus: IsWorkday", style = MaterialTheme.typography.bodyLarge)
-                Text("版本 1.0.0", style = MaterialTheme.typography.bodyMedium)
+                Text("版本 1.1.0", style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "基于中国法定节假日数据，为三星日常程序提供智能闹钟调度。",

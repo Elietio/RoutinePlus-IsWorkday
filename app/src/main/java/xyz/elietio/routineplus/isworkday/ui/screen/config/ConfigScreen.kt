@@ -79,7 +79,7 @@ fun ConfigScreen(
         // Target offset
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("校验目标", style = MaterialTheme.typography.titleMedium)
@@ -110,7 +110,7 @@ fun ConfigScreen(
         // Condition mode
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("判定条件", style = MaterialTheme.typography.titleMedium)
@@ -163,7 +163,7 @@ fun ConfigScreen(
         // Alarm time
         Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text("闹钟设定", style = MaterialTheme.typography.titleMedium)

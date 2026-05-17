@@ -3,15 +3,19 @@ package xyz.elietio.routineplus.isworkday.ui.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -25,9 +29,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import xyz.elietio.routineplus.isworkday.data.local.entity.HolidayEntity
 import xyz.elietio.routineplus.isworkday.ui.theme.holidayRed
+import xyz.elietio.routineplus.isworkday.ui.theme.holidayRedDark
+import xyz.elietio.routineplus.isworkday.ui.theme.holidayRedLight
 import xyz.elietio.routineplus.isworkday.ui.theme.todayHighlight
-import xyz.elietio.routineplus.isworkday.ui.theme.weekendGray
 import xyz.elietio.routineplus.isworkday.ui.theme.workdayOrange
+import xyz.elietio.routineplus.isworkday.ui.theme.workdayOrangeDark
+import xyz.elietio.routineplus.isworkday.ui.theme.workdayOrangeLight
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -40,13 +47,25 @@ fun DayCell(
     onClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val isDark = isSystemInDarkTheme()
     val isWeekend = date.dayOfWeek == DayOfWeek.SATURDAY || date.dayOfWeek == DayOfWeek.SUNDAY
+
     val textColor = when {
-        !isCurrentMonth -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
+        !isCurrentMonth -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
+        isToday -> MaterialTheme.colorScheme.onPrimary
         holidayInfo != null && holidayInfo.isOffDay -> holidayRed
         holidayInfo != null && !holidayInfo.isOffDay -> workdayOrange
-        isWeekend -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+        isWeekend -> MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
         else -> MaterialTheme.colorScheme.onSurface
+    }
+
+    val bgModifier = when {
+        isToday -> Modifier.background(MaterialTheme.colorScheme.primary, CircleShape)
+        holidayInfo != null && holidayInfo.isOffDay && isCurrentMonth ->
+            Modifier.background(if (isDark) holidayRedDark else holidayRedLight, CircleShape)
+        holidayInfo != null && !holidayInfo.isOffDay && isCurrentMonth ->
+            Modifier.background(if (isDark) workdayOrangeDark else workdayOrangeLight, CircleShape)
+        else -> Modifier
     }
 
     Box(
@@ -54,15 +73,7 @@ fun DayCell(
             .aspectRatio(1f)
             .padding(2.dp)
             .clip(CircleShape)
-            .then(
-                if (isToday) Modifier.border(2.dp, todayHighlight, CircleShape)
-                else Modifier
-            )
-            .then(
-                if (isWeekend && isCurrentMonth && holidayInfo == null)
-                    Modifier.background(weekendGray.copy(alpha = 0.5f), CircleShape)
-                else Modifier
-            )
+            .then(bgModifier)
             .clickable(enabled = isCurrentMonth) { onClick(date) },
         contentAlignment = Alignment.Center
     ) {
@@ -70,7 +81,7 @@ fun DayCell(
             Text(
                 text = date.dayOfMonth.toString(),
                 color = textColor,
-                fontSize = 14.sp,
+                fontSize = 13.sp,
                 fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
                 textAlign = TextAlign.Center
             )
@@ -78,9 +89,11 @@ fun DayCell(
             if (holidayInfo != null && isCurrentMonth) {
                 Text(
                     text = if (holidayInfo.isOffDay) "休" else "班",
-                    color = if (holidayInfo.isOffDay) holidayRed else workdayOrange,
+                    color = if (isToday) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                    else if (holidayInfo.isOffDay) holidayRed else workdayOrange,
                     fontSize = 8.sp,
-                    fontWeight = FontWeight.Bold
+                    fontWeight = FontWeight.Bold,
+                    lineHeight = 8.sp
                 )
             }
         }
@@ -108,25 +121,30 @@ fun CalendarGrid(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            weekDayLabels.forEach { label ->
+            weekDayLabels.forEachIndexed { index, label ->
+                val isWeekendLabel = index == 0 || index == 6
                 Box(
                     modifier = Modifier.weight(1f),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = label,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = if (isWeekendLabel) MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                     )
                 }
             }
         }
 
+        Spacer(modifier = Modifier.height(4.dp))
+
         // Day grid
         var dayCounter = 1
-        val totalCells = ((firstDayOfWeek + daysInMonth + 6) / 7) * 7
+        val totalWeeks = (firstDayOfWeek + daysInMonth + 6) / 7
 
-        for (week in 0 until totalCells / 7) {
+        for (week in 0 until totalWeeks) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -134,21 +152,16 @@ fun CalendarGrid(
                 for (dow in 0..6) {
                     val cellIndex = week * 7 + dow
                     if (cellIndex < firstDayOfWeek || dayCounter > daysInMonth) {
-                        // Empty or overflow cell
                         val displayDate = if (cellIndex < firstDayOfWeek) {
                             firstDay.minusDays((firstDayOfWeek - cellIndex).toLong())
                         } else {
-                            yearMonth.atDay(daysInMonth).plusDays((dayCounter - daysInMonth).toLong())
-                                .also { if (cellIndex >= firstDayOfWeek + daysInMonth) dayCounter++ }
+                            yearMonth.atEndOfMonth().plusDays(
+                                (cellIndex - firstDayOfWeek - daysInMonth + 1).toLong()
+                            )
                         }
                         Box(modifier = Modifier.weight(1f)) {
                             DayCell(
-                                date = if (cellIndex < firstDayOfWeek)
-                                    firstDay.minusDays((firstDayOfWeek - cellIndex).toLong())
-                                else
-                                    yearMonth.atEndOfMonth().plusDays(
-                                        (cellIndex - firstDayOfWeek - daysInMonth + 1).toLong()
-                                    ),
+                                date = displayDate,
                                 isCurrentMonth = false,
                                 isToday = false,
                                 holidayInfo = null,
@@ -157,13 +170,12 @@ fun CalendarGrid(
                         }
                     } else {
                         val date = yearMonth.atDay(dayCounter)
-                        val dateStr = date.toString()
                         Box(modifier = Modifier.weight(1f)) {
                             DayCell(
                                 date = date,
                                 isCurrentMonth = true,
                                 isToday = date == today,
-                                holidayInfo = holidayMap[dateStr],
+                                holidayInfo = holidayMap[date.toString()],
                                 onClick = onDayClick
                             )
                         }
@@ -172,5 +184,51 @@ fun CalendarGrid(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun CalendarLegend(modifier: Modifier = Modifier) {
+    val isDark = isSystemInDarkTheme()
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        LegendChip(
+            color = holidayRed,
+            bgColor = if (isDark) holidayRedDark else holidayRedLight,
+            label = "休 法定假日"
+        )
+        Spacer(modifier = Modifier.size(16.dp))
+        LegendChip(
+            color = workdayOrange,
+            bgColor = if (isDark) workdayOrangeDark else workdayOrangeLight,
+            label = "班 调休补班"
+        )
+    }
+}
+
+@Composable
+private fun LegendChip(color: Color, bgColor: Color, label: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .clip(RoundedCornerShape(8.dp))
+            .background(bgColor)
+            .padding(horizontal = 10.dp, vertical = 4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(8.dp)
+                .background(color, CircleShape)
+        )
+        Spacer(modifier = Modifier.size(6.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = color,
+            fontWeight = FontWeight.Medium
+        )
     }
 }

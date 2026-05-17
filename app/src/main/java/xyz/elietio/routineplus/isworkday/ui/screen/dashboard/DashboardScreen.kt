@@ -30,6 +30,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import xyz.elietio.routineplus.isworkday.ui.component.CalendarGrid
+import xyz.elietio.routineplus.isworkday.ui.component.CalendarLegend
 import xyz.elietio.routineplus.isworkday.ui.component.StatusCard
 import xyz.elietio.routineplus.isworkday.ui.theme.holidayRed
 import xyz.elietio.routineplus.isworkday.ui.theme.workdayOrange
@@ -92,14 +93,7 @@ fun DashboardScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Legend
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            LegendItem(color = holidayRed, label = "法定假日 (休)")
-            LegendItem(color = workdayOrange, label = "调休补班 (班)")
-        }
+        CalendarLegend()
     }
 
     // Bottom sheet for day details
@@ -130,12 +124,4 @@ fun DashboardScreen(
     }
 }
 
-@Composable
-private fun LegendItem(color: androidx.compose.ui.graphics.Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        androidx.compose.foundation.Canvas(modifier = Modifier.padding(end = 4.dp)) {
-            drawCircle(color = color, radius = 6.dp.toPx())
-        }
-        Text(text = label, style = MaterialTheme.typography.labelSmall)
-    }
-}
+
