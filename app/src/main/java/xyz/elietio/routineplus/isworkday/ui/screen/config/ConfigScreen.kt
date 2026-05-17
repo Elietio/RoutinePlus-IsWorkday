@@ -58,7 +58,7 @@ fun ConfigScreen(
         AlertDialog(
             onDismissRequest = { viewModel.resetPublished() },
             title = { Text("快捷指令已生成") },
-            text = { Text("您现在可以在三星"模式与日常程序"中找到该快捷指令") },
+            text = { Text("您现在可以在三星「模式与日常程序」中找到该快捷指令") },
             confirmButton = {
                 TextButton(onClick = { viewModel.resetPublished() }) {
                     Text("确定")
