@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">R+ IsWorkday</string>
+    <string name="shortcut_execute_label">执行闹钟规则</string>
+    <string name="shortcut_execute_long_label">判定工作日/休息日并创建闹钟</string>
+    <string name="shortcut_sync_label">同步节假日</string>
+    <string name="shortcut_sync_long_label">同步中国法定节假日数据</string>
+</resources>

@@ -1,0 +1,3 @@
+-dontwarn io.ktor.**
+-keep class xyz.elietio.routineplus.isworkday.data.remote.dto.** { *; }
+-keep class xyz.elietio.routineplus.isworkday.data.local.entity.** { *; }
