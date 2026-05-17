@@ -4,7 +4,8 @@
 
 ## 1. UI 设计与美学规范 (Material You)
 - **强制使用 Material 3**：所有组件必须使用 `androidx.compose.material3.*`。
-- **色彩管理**：使用 `MaterialTheme.colorScheme` 中提供的语义色（如 `surfaceContainer`, `surfaceContainerHigh`, `primary`, `onPrimary`）。绝对禁止在业务代码中硬编码 HEX 颜色。
+- **色彩管理与卡片样式**：使用 `MaterialTheme.colorScheme` 中提供的语义色。对于 Card 组件，避免使用死板的灰色（如 `surfaceContainer`），应当优先使用带有莫兰迪/马卡龙色系倾向的色彩（如 `secondaryContainer` 或 `primaryContainer`）以提升界面的生动性与层次感。绝对禁止在业务代码中硬编码 HEX 颜色。
+- **主题适配**：App 必须同时支持浅色、深色模式，并提供“跟随系统 / 浅色 / 深色”的手动切换开关（保存在 DataStore 中，由 MainActivity 注入应用）。
 - **纯粹主义**：所有 Toast 和 Terminal 输出必须为**纯文本**，**禁止使用任何 Emoji (如 ✅, 🚫, ⚠️) 或特殊排版符号 (如 `R+ |`)**。
 
 ## 2. 三星日常程序集成规范
