@@ -77,10 +77,10 @@ class SandboxViewModel @Inject constructor(
             }
 
             if (shouldSet) {
-                addLine("结果", "✅ 条件满足：将创建闹钟 $hour:${minute.toString().padStart(2, '0')} - $label", TerminalLevel.SUCCESS)
+                addLine("结果", "条件满足：将创建闹钟 $hour:${minute.toString().padStart(2, '0')} - $label", TerminalLevel.SUCCESS)
             } else {
                 addLine("判定", "不满足 $conditionMode 触发条件", TerminalLevel.WARNING)
-                addLine("结果", "🚫 拦截成功：已跳过闹钟创建。", TerminalLevel.WARNING)
+                addLine("结果", "拦截成功：已跳过闹钟创建。", TerminalLevel.WARNING)
             }
 
             _isRunning.value = false
@@ -92,13 +92,13 @@ class SandboxViewModel @Inject constructor(
             _isRunning.value = true
             _lines.value = emptyList()
 
-            addLine("系统", "⚠️ 真实闹钟测试模式", TerminalLevel.WARNING)
+            addLine("系统", "真实闹钟测试模式", TerminalLevel.WARNING)
             addLine("执行", "正在调用系统闹钟 API...", TerminalLevel.INFO)
 
             val result = setAlarmUseCase(config)
 
             if (result.alarmSet) {
-                addLine("结果", "✅ ${result.message}", TerminalLevel.SUCCESS)
+                addLine("结果", result.message, TerminalLevel.SUCCESS)
             } else {
                 val level = if (result.shouldSetAlarm) TerminalLevel.ERROR else TerminalLevel.WARNING
                 addLine("结果", result.message, level)

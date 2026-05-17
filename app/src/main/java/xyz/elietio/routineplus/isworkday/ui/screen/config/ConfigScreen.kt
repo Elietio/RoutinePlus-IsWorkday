@@ -50,22 +50,9 @@ fun ConfigScreen(
     viewModel: ConfigViewModel = hiltViewModel()
 ) {
     val config by viewModel.config.collectAsState()
-    val published by viewModel.published.collectAsState()
     var showTimePicker by remember { mutableStateOf(false) }
     var conditionExpanded by remember { mutableStateOf(false) }
 
-    if (published) {
-        AlertDialog(
-            onDismissRequest = { viewModel.resetPublished() },
-            title = { Text("快捷指令已生成") },
-            text = { Text("您现在可以在三星「模式与日常程序」中找到该快捷指令") },
-            confirmButton = {
-                TextButton(onClick = { viewModel.resetPublished() }) {
-                    Text("确定")
-                }
-            }
-        )
-    }
 
     Column(
         modifier = Modifier
@@ -192,14 +179,7 @@ fun ConfigScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
 
-        ExtendedFloatingActionButton(
-            onClick = { viewModel.publishShortcut() },
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            icon = { Icon(Icons.Default.Alarm, contentDescription = null) },
-            text = { Text("生成日常快捷指令") }
-        )
     }
 
     if (showTimePicker) {
