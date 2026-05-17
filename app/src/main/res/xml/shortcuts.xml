@@ -2,25 +2,25 @@
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
 
     <shortcut
-        android:shortcutId="execute_workday_alarm"
+        android:shortcutId="execute_alarm"
         android:enabled="true"
         android:shortcutShortLabel="@string/shortcut_execute_label"
         android:shortcutLongLabel="@string/shortcut_execute_long_label">
         <intent
             android:action="xyz.elietio.routineplus.isworkday.ACTION_EXECUTE"
             android:targetPackage="xyz.elietio.routineplus.isworkday"
-            android:targetClass="xyz.elietio.routineplus.isworkday.receiver.ShortcutReceiver" />
+            android:targetClass="xyz.elietio.routineplus.isworkday.ShortcutActivity" />
     </shortcut>
 
     <shortcut
-        android:shortcutId="sync_holiday_data"
+        android:shortcutId="sync_data"
         android:enabled="true"
         android:shortcutShortLabel="@string/shortcut_sync_label"
         android:shortcutLongLabel="@string/shortcut_sync_long_label">
         <intent
             android:action="xyz.elietio.routineplus.isworkday.ACTION_SYNC"
             android:targetPackage="xyz.elietio.routineplus.isworkday"
-            android:targetClass="xyz.elietio.routineplus.isworkday.receiver.ShortcutReceiver" />
+            android:targetClass="xyz.elietio.routineplus.isworkday.ShortcutActivity" />
     </shortcut>
 
 </shortcuts>

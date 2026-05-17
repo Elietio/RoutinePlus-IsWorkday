@@ -2,14 +2,15 @@ package xyz.elietio.routineplus.isworkday.shortcut
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import xyz.elietio.routineplus.isworkday.R
+import xyz.elietio.routineplus.isworkday.ShortcutActivity
 import xyz.elietio.routineplus.isworkday.domain.model.AlarmConfig
 import xyz.elietio.routineplus.isworkday.domain.model.ConditionMode
-import xyz.elietio.routineplus.isworkday.receiver.ShortcutReceiver
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,8 +19,9 @@ class ShortcutHelper @Inject constructor(
     @ApplicationContext private val context: Context
 ) {
     fun publishAlarmShortcut(config: AlarmConfig) {
-        val intent = Intent(ShortcutReceiver.ACTION_EXECUTE).apply {
-            setPackage(context.packageName)
+        // 使用与 shortcuts.xml 相同的 ID "execute_alarm"，避免重复
+        val intent = Intent(ShortcutActivity.ACTION_EXECUTE).apply {
+            setClass(context, ShortcutActivity::class.java)
             putExtra("target_offset", config.targetOffset)
             putExtra("condition_mode", config.conditionMode.name)
             putExtra("alarm_hour", config.hour)
@@ -36,7 +38,7 @@ class ShortcutHelper @Inject constructor(
         val offsetLabel = if (config.targetOffset == 0) "今天" else "明天"
         val timeStr = "${config.hour}:${config.minute.toString().padStart(2, '0')}"
 
-        val shortcut = ShortcutInfoCompat.Builder(context, "alarm_${config.hashCode()}")
+        val shortcut = ShortcutInfoCompat.Builder(context, SHORTCUT_ID_EXECUTE)
             .setShortLabel("$condLabel $timeStr")
             .setLongLabel("${offsetLabel}${condLabel} $timeStr ${config.label}")
             .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher))
@@ -44,14 +46,16 @@ class ShortcutHelper @Inject constructor(
             .build()
 
         ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+        Log.i(TAG, "Published alarm shortcut: $condLabel $timeStr")
     }
 
     fun publishSyncShortcut() {
-        val intent = Intent(ShortcutReceiver.ACTION_SYNC).apply {
-            setPackage(context.packageName)
+        // 使用与 shortcuts.xml 相同的 ID "sync_data"，避免重复
+        val intent = Intent(ShortcutActivity.ACTION_SYNC).apply {
+            setClass(context, ShortcutActivity::class.java)
         }
 
-        val shortcut = ShortcutInfoCompat.Builder(context, "sync_data")
+        val shortcut = ShortcutInfoCompat.Builder(context, SHORTCUT_ID_SYNC)
             .setShortLabel("同步节假日")
             .setLongLabel("同步节假日数据")
             .setIcon(IconCompat.createWithResource(context, R.mipmap.ic_launcher))
@@ -59,5 +63,13 @@ class ShortcutHelper @Inject constructor(
             .build()
 
         ShortcutManagerCompat.pushDynamicShortcut(context, shortcut)
+        Log.i(TAG, "Published sync shortcut")
+    }
+
+    companion object {
+        private const val TAG = "ShortcutHelper"
+        // 与 shortcuts.xml 保持一致的 ID
+        const val SHORTCUT_ID_EXECUTE = "execute_alarm"
+        const val SHORTCUT_ID_SYNC = "sync_data"
     }
 }

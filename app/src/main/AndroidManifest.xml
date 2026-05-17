@@ -28,6 +28,19 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
+        <activity
+            android:name=".ShortcutActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:theme="@style/Theme.RoutinePlus.Transparent">
+            <intent-filter>
+                <action android:name="xyz.elietio.routineplus.isworkday.ACTION_EXECUTE" />
+                <action android:name="xyz.elietio.routineplus.isworkday.ACTION_SYNC" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
         <receiver
             android:name=".receiver.ShortcutReceiver"
             android:exported="true">
