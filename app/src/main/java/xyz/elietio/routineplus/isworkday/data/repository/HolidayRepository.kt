@@ -59,7 +59,14 @@ class HolidayRepository @Inject constructor(
             val existingMeta = dao.getSyncMeta(year)
 
             if (existingMeta?.dataHash == hash) {
-                Log.d(TAG, "Year $year data unchanged, skipping write")
+                Log.d(TAG, "Year $year data unchanged, updating sync time only")
+                dao.upsertSyncMeta(
+                    SyncMetaEntity(
+                        year = year,
+                        lastSyncTimestamp = System.currentTimeMillis(),
+                        dataHash = hash
+                    )
+                )
                 return Result.success(Unit)
             }
 
