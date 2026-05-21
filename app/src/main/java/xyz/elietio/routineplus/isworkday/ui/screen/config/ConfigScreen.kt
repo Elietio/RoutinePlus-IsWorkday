@@ -55,6 +55,15 @@ fun ConfigScreen(
     viewModel: ConfigViewModel = hiltViewModel()
 ) {
     val config by viewModel.config.collectAsState()
+    var labelInput by remember(config.label) { mutableStateOf(config.label) }
+
+    LaunchedEffect(labelInput) {
+        if (labelInput != config.label) {
+            kotlinx.coroutines.delay(400)
+            viewModel.updateLabel(labelInput)
+        }
+    }
+
     var showTimePicker by remember { mutableStateOf(false) }
     var conditionExpanded by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -181,8 +190,8 @@ fun ConfigScreen(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
-                    value = config.label,
-                    onValueChange = { viewModel.updateLabel(it) },
+                    value = labelInput,
+                    onValueChange = { labelInput = it },
                     label = { Text("闹钟标签") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
