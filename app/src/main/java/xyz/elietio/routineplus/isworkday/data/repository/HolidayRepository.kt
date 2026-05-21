@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import xyz.elietio.routineplus.isworkday.data.local.HolidayDao
 import xyz.elietio.routineplus.isworkday.data.local.entity.HolidayEntity
+import xyz.elietio.routineplus.isworkday.data.local.entity.OverrideEntity
 import xyz.elietio.routineplus.isworkday.data.local.entity.SyncMetaEntity
 import xyz.elietio.routineplus.isworkday.data.remote.HolidayApiService
 import java.security.MessageDigest
@@ -41,6 +42,24 @@ class HolidayRepository @Inject constructor(
     }
 
     suspend fun hasData(): Boolean = dao.getCount() > 0
+
+    // --- Overrides CRUD ---
+
+    suspend fun getOverrideByDate(date: String): OverrideEntity? {
+        return dao.getOverrideByDate(date)
+    }
+
+    fun getOverridesBetween(startDate: String, endDate: String): Flow<List<OverrideEntity>> {
+        return dao.getOverridesBetween(startDate, endDate)
+    }
+
+    suspend fun insertOverrides(overrides: List<OverrideEntity>) {
+        dao.insertOverrides(overrides)
+    }
+
+    suspend fun deleteOverrides(dates: List<String>) {
+        dao.deleteOverrides(dates)
+    }
 
     suspend fun syncYear(year: Int): Result<Unit> {
         val prefs = dataStore.data.first()

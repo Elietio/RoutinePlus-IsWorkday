@@ -28,10 +28,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import xyz.elietio.routineplus.isworkday.data.local.entity.HolidayEntity
+import xyz.elietio.routineplus.isworkday.data.local.entity.OverrideEntity
 import xyz.elietio.routineplus.isworkday.ui.theme.holidayRed
 import xyz.elietio.routineplus.isworkday.ui.theme.holidayRedDark
 import xyz.elietio.routineplus.isworkday.ui.theme.holidayRedLight
-import xyz.elietio.routineplus.isworkday.ui.theme.todayHighlight
 import xyz.elietio.routineplus.isworkday.ui.theme.workdayOrange
 import xyz.elietio.routineplus.isworkday.ui.theme.workdayOrangeDark
 import xyz.elietio.routineplus.isworkday.ui.theme.workdayOrangeLight
@@ -43,7 +43,10 @@ fun DayCell(
     date: LocalDate,
     isCurrentMonth: Boolean,
     isToday: Boolean,
-    holidayInfo: HolidayEntity?,
+    isSelected: Boolean,
+    isOverride: Boolean,
+    isOffDay: Boolean?,
+    label: String?,
     onClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -53,18 +56,26 @@ fun DayCell(
     val textColor = when {
         !isCurrentMonth -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
         isToday -> MaterialTheme.colorScheme.onPrimary
-        holidayInfo != null && holidayInfo.isOffDay -> holidayRed
-        holidayInfo != null && !holidayInfo.isOffDay -> workdayOrange
+        isOffDay == true -> holidayRed
+        isOffDay == false -> workdayOrange
         isWeekend -> MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
         else -> MaterialTheme.colorScheme.onSurface
     }
 
     val bgModifier = when {
         isToday -> Modifier.background(MaterialTheme.colorScheme.primary, CircleShape)
-        holidayInfo != null && holidayInfo.isOffDay && isCurrentMonth ->
+        isOffDay == true && isCurrentMonth ->
             Modifier.background(if (isDark) holidayRedDark else holidayRedLight, CircleShape)
-        holidayInfo != null && !holidayInfo.isOffDay && isCurrentMonth ->
+        isOffDay == false && isCurrentMonth ->
             Modifier.background(if (isDark) workdayOrangeDark else workdayOrangeLight, CircleShape)
+        else -> Modifier
+    }
+
+    val borderModifier = when {
+        isSelected && isCurrentMonth ->
+            Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+        isOverride && isCurrentMonth ->
+            Modifier.border(1.5.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f), CircleShape)
         else -> Modifier
     }
 
@@ -73,6 +84,7 @@ fun DayCell(
             .aspectRatio(1f)
             .padding(2.dp)
             .clip(CircleShape)
+            .then(borderModifier)
             .then(bgModifier)
             .clickable(enabled = isCurrentMonth) { onClick(date) },
         contentAlignment = Alignment.Center
@@ -86,11 +98,11 @@ fun DayCell(
                 textAlign = TextAlign.Center
             )
 
-            if (holidayInfo != null && isCurrentMonth) {
+            if (label != null && isCurrentMonth) {
                 Text(
-                    text = if (holidayInfo.isOffDay) "休" else "班",
+                    text = label,
                     color = if (isToday) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
-                    else if (holidayInfo.isOffDay) holidayRed else workdayOrange,
+                    else if (isOffDay == true) holidayRed else workdayOrange,
                     fontSize = 8.sp,
                     fontWeight = FontWeight.Bold,
                     lineHeight = 8.sp
@@ -104,6 +116,8 @@ fun DayCell(
 fun CalendarGrid(
     yearMonth: java.time.YearMonth,
     holidays: List<HolidayEntity>,
+    overridesMap: Map<String, OverrideEntity>,
+    selectedDates: Set<LocalDate>,
     onDayClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -164,18 +178,43 @@ fun CalendarGrid(
                                 date = displayDate,
                                 isCurrentMonth = false,
                                 isToday = false,
-                                holidayInfo = null,
+                                isSelected = false,
+                                isOverride = false,
+                                isOffDay = null,
+                                label = null,
                                 onClick = {}
                             )
                         }
                     } else {
                         val date = yearMonth.atDay(dayCounter)
+                        val dateStr = date.toString()
+                        val holidayInfo = holidayMap[dateStr]
+                        val overrideInfo = overridesMap[dateStr]
+
+                        val isOverride = overrideInfo != null && overrideInfo.overrideType != 0
+                        val isOffDay = when {
+                            isOverride -> overrideInfo!!.overrideType == 2
+                            holidayInfo != null -> holidayInfo.isOffDay
+                            else -> null
+                        }
+
+                        val label = when {
+                            overrideInfo != null && overrideInfo.overrideType == 1 -> "强班"
+                            overrideInfo != null && overrideInfo.overrideType == 2 -> "强休"
+                            holidayInfo != null && holidayInfo.isOffDay -> "休"
+                            holidayInfo != null && !holidayInfo.isOffDay -> "班"
+                            else -> null
+                        }
+
                         Box(modifier = Modifier.weight(1f)) {
                             DayCell(
                                 date = date,
                                 isCurrentMonth = true,
                                 isToday = date == today,
-                                holidayInfo = holidayMap[date.toString()],
+                                isSelected = selectedDates.contains(date),
+                                isOverride = isOverride,
+                                isOffDay = isOffDay,
+                                label = label,
                                 onClick = onDayClick
                             )
                         }
@@ -190,22 +229,47 @@ fun CalendarGrid(
 @Composable
 fun CalendarLegend(modifier: Modifier = Modifier) {
     val isDark = isSystemInDarkTheme()
-    Row(
+    Column(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        LegendChip(
-            color = holidayRed,
-            bgColor = if (isDark) holidayRedDark else holidayRedLight,
-            label = "休 法定假日"
-        )
-        Spacer(modifier = Modifier.size(16.dp))
-        LegendChip(
-            color = workdayOrange,
-            bgColor = if (isDark) workdayOrangeDark else workdayOrangeLight,
-            label = "班 调休补班"
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            LegendChip(
+                color = holidayRed,
+                bgColor = if (isDark) holidayRedDark else holidayRedLight,
+                label = "休 法定假日"
+            )
+            Spacer(modifier = Modifier.size(16.dp))
+            LegendChip(
+                color = workdayOrange,
+                bgColor = if (isDark) workdayOrangeDark else workdayOrangeLight,
+                label = "班 调休补班"
+            )
+        }
+        Spacer(modifier = Modifier.height(10.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                    .padding(horizontal = 10.dp, vertical = 4.dp)
+            ) {
+                Text(
+                    text = "外框 手动覆盖设定(强开强关)",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
     }
 }
 

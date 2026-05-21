@@ -7,9 +7,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import xyz.elietio.routineplus.isworkday.data.local.entity.HolidayEntity
+import xyz.elietio.routineplus.isworkday.data.local.entity.OverrideEntity
 import xyz.elietio.routineplus.isworkday.data.repository.HolidayRepository
 import xyz.elietio.routineplus.isworkday.domain.usecase.SyncHolidayUseCase
 import java.time.LocalDate
@@ -31,14 +33,25 @@ class DashboardViewModel @Inject constructor(
     private val _holidays = MutableStateFlow<List<HolidayEntity>>(emptyList())
     val holidays: StateFlow<List<HolidayEntity>> = _holidays.asStateFlow()
 
+    private val _overrides = MutableStateFlow<List<OverrideEntity>>(emptyList())
+    val overrides: StateFlow<List<OverrideEntity>> = _overrides.asStateFlow()
+
+    val overridesMap: StateFlow<Map<String, OverrideEntity>> = _overrides
+        .map { list -> list.associateBy { it.date } }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyMap()
+        )
+
     private val _lastSyncTime = MutableStateFlow<Long?>(null)
     val lastSyncTime: StateFlow<Long?> = _lastSyncTime.asStateFlow()
 
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
-    private val _selectedDay = MutableStateFlow<HolidayEntity?>(null)
-    val selectedDay: StateFlow<HolidayEntity?> = _selectedDay.asStateFlow()
+    private val _selectedDates = MutableStateFlow<Set<LocalDate>>(emptySet())
+    val selectedDates: StateFlow<Set<LocalDate>> = _selectedDates.asStateFlow()
 
     init {
         loadMonthData()
@@ -56,17 +69,21 @@ class DashboardViewModel @Inject constructor(
 
     fun navigateMonth(offset: Int) {
         _currentMonth.value = _currentMonth.value.plusMonths(offset.toLong())
+        clearSelectedDates()
         loadMonthData()
     }
 
-    fun selectDay(date: LocalDate) {
-        viewModelScope.launch {
-            _selectedDay.value = repository.getDayByDate(date.toString())
+    fun toggleDateSelection(date: LocalDate) {
+        val current = _selectedDates.value
+        if (current.contains(date)) {
+            _selectedDates.value = current - date
+        } else {
+            _selectedDates.value = current + date
         }
     }
 
-    fun clearSelection() {
-        _selectedDay.value = null
+    fun clearSelectedDates() {
+        _selectedDates.value = emptySet()
     }
 
     fun sync() {
@@ -79,6 +96,29 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    fun applyOverrides(overrideType: Int, customHour: Int?, customMinute: Int?) {
+        viewModelScope.launch {
+            val dates = _selectedDates.value
+            if (dates.isEmpty()) return@launch
+
+            if (overrideType == 0) {
+                repository.deleteOverrides(dates.map { it.toString() })
+            } else {
+                val list = dates.map { date ->
+                    OverrideEntity(
+                        date = date.toString(),
+                        overrideType = overrideType,
+                        customHour = if (overrideType == 1) customHour else null,
+                        customMinute = if (overrideType == 1) customMinute else null
+                    )
+                }
+                repository.insertOverrides(list)
+            }
+            clearSelectedDates()
+            loadMonthData()
+        }
+    }
+
     private fun loadMonthData() {
         viewModelScope.launch {
             val ym = _currentMonth.value
@@ -86,6 +126,14 @@ class DashboardViewModel @Inject constructor(
             val end = ym.atEndOfMonth().toString()
             repository.getDaysBetween(start, end).collect { days ->
                 _holidays.value = days
+            }
+        }
+        viewModelScope.launch {
+            val ym = _currentMonth.value
+            val start = ym.atDay(1).toString()
+            val end = ym.atEndOfMonth().toString()
+            repository.getOverridesBetween(start, end).collect { list ->
+                _overrides.value = list
             }
         }
     }

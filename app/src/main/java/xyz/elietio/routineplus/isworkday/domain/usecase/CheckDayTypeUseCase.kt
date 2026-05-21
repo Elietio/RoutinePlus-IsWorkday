@@ -17,6 +17,15 @@ class CheckDayTypeUseCase @Inject constructor(
     }
 
     suspend fun checkDate(date: LocalDate): DayType {
+        val override = repository.getOverrideByDate(date.toString())
+        if (override != null && override.overrideType != 0) {
+            return when (override.overrideType) {
+                1 -> DayType.WORKDAY
+                2 -> DayType.OFFDAY
+                else -> DayType.NORMAL
+            }
+        }
+
         val record = repository.getDayByDate(date.toString())
         return when {
             record != null && record.isOffDay -> DayType.OFFDAY

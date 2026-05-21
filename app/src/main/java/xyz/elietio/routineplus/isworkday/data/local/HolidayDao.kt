@@ -6,6 +6,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 import xyz.elietio.routineplus.isworkday.data.local.entity.HolidayEntity
+import xyz.elietio.routineplus.isworkday.data.local.entity.OverrideEntity
 import xyz.elietio.routineplus.isworkday.data.local.entity.SyncMetaEntity
 
 @Dao
@@ -28,6 +29,20 @@ interface HolidayDao {
 
     @Query("SELECT COUNT(*) FROM holiday_days")
     suspend fun getCount(): Int
+
+    // --- Overrides ---
+
+    @Query("SELECT * FROM holiday_overrides WHERE date = :date LIMIT 1")
+    suspend fun getOverrideByDate(date: String): OverrideEntity?
+
+    @Query("SELECT * FROM holiday_overrides WHERE date BETWEEN :startDate AND :endDate ORDER BY date ASC")
+    fun getOverridesBetween(startDate: String, endDate: String): Flow<List<OverrideEntity>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertOverrides(overrides: List<OverrideEntity>)
+
+    @Query("DELETE FROM holiday_overrides WHERE date IN (:dates)")
+    suspend fun deleteOverrides(dates: List<String>)
 
     // --- Sync Meta ---
 
