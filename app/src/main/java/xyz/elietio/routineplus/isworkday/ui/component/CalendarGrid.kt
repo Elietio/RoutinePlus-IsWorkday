@@ -30,11 +30,13 @@ import androidx.compose.ui.unit.sp
 import xyz.elietio.routineplus.isworkday.data.local.entity.HolidayEntity
 import xyz.elietio.routineplus.isworkday.data.local.entity.OverrideEntity
 import xyz.elietio.routineplus.isworkday.ui.theme.holidayRed
-import xyz.elietio.routineplus.isworkday.ui.theme.holidayRedDark
 import xyz.elietio.routineplus.isworkday.ui.theme.holidayRedLight
-import xyz.elietio.routineplus.isworkday.ui.theme.workdayOrange
-import xyz.elietio.routineplus.isworkday.ui.theme.workdayOrangeDark
-import xyz.elietio.routineplus.isworkday.ui.theme.workdayOrangeLight
+import xyz.elietio.routineplus.isworkday.ui.theme.holidayRedDark
+import xyz.elietio.routineplus.isworkday.ui.theme.holidayRedTextDark
+import xyz.elietio.routineplus.isworkday.ui.theme.workdayGreen
+import xyz.elietio.routineplus.isworkday.ui.theme.workdayGreenLight
+import xyz.elietio.routineplus.isworkday.ui.theme.workdayGreenDark
+import xyz.elietio.routineplus.isworkday.ui.theme.workdayGreenTextDark
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -53,27 +55,33 @@ fun DayCell(
     val isDark = isSystemInDarkTheme()
     val isWeekend = date.dayOfWeek == DayOfWeek.SATURDAY || date.dayOfWeek == DayOfWeek.SUNDAY
 
+    // ── Morandi Premium Color Adapters ──
+    val holidayBg = if (isDark) holidayRedDark else holidayRedLight
+    val holidayText = if (isDark) holidayRedTextDark else holidayRed
+    
+    val workdayBg = if (isDark) workdayGreenDark else workdayGreenLight
+    val workdayText = if (isDark) workdayGreenTextDark else workdayGreen
+
     val textColor = when {
-        !isCurrentMonth -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
-        isToday -> MaterialTheme.colorScheme.onPrimary
-        isOffDay == true -> holidayRed
-        isOffDay == false -> workdayOrange
-        isWeekend -> MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+        !isCurrentMonth -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
+        isSelected -> MaterialTheme.colorScheme.onPrimary
+        isToday -> MaterialTheme.colorScheme.onPrimaryContainer
+        isOffDay == true -> holidayText
+        isOffDay == false -> workdayText
+        isWeekend -> MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
         else -> MaterialTheme.colorScheme.onSurface
     }
 
     val bgModifier = when {
-        isToday -> Modifier.background(MaterialTheme.colorScheme.primary, CircleShape)
-        isOffDay == true && isCurrentMonth ->
-            Modifier.background(if (isDark) holidayRedDark else holidayRedLight, CircleShape)
-        isOffDay == false && isCurrentMonth ->
-            Modifier.background(if (isDark) workdayOrangeDark else workdayOrangeLight, CircleShape)
+        isSelected -> Modifier.background(MaterialTheme.colorScheme.primary, CircleShape)
+        isToday -> Modifier.background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+        isOffDay == true && isCurrentMonth -> Modifier.background(holidayBg, CircleShape)
+        isOffDay == false && isCurrentMonth -> Modifier.background(workdayBg, CircleShape)
         else -> Modifier
     }
 
     val borderModifier = when {
-        isSelected && isCurrentMonth ->
-            Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+        isSelected -> Modifier // Filled state, no border
         isOverride && isCurrentMonth ->
             Modifier.border(1.5.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f), CircleShape)
         else -> Modifier
@@ -99,15 +107,16 @@ fun DayCell(
                 text = date.dayOfMonth.toString(),
                 color = textColor,
                 fontSize = 13.sp,
-                fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
                 textAlign = TextAlign.Center
             )
 
             if (label != null && isCurrentMonth) {
                 Text(
                     text = label,
-                    color = if (isToday) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
-                    else if (isOffDay == true) holidayRed else workdayOrange,
+                    color = if (isSelected) MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                    else if (isToday) MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    else if (isOffDay == true) holidayText else workdayText,
                     fontSize = 8.sp,
                     fontWeight = FontWeight.Bold,
                     lineHeight = 8.sp
@@ -234,6 +243,12 @@ fun CalendarGrid(
 @Composable
 fun CalendarLegend(modifier: Modifier = Modifier) {
     val isDark = isSystemInDarkTheme()
+    val holidayBg = if (isDark) holidayRedDark else holidayRedLight
+    val holidayText = if (isDark) holidayRedTextDark else holidayRed
+    
+    val workdayBg = if (isDark) workdayGreenDark else workdayGreenLight
+    val workdayText = if (isDark) workdayGreenTextDark else workdayGreen
+
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -244,15 +259,15 @@ fun CalendarLegend(modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             LegendChip(
-                color = holidayRed,
-                bgColor = if (isDark) holidayRedDark else holidayRedLight,
-                label = "休 法定假日"
+                color = holidayText,
+                bgColor = holidayBg,
+                label = "休 法定假日/强休"
             )
             Spacer(modifier = Modifier.size(16.dp))
             LegendChip(
-                color = workdayOrange,
-                bgColor = if (isDark) workdayOrangeDark else workdayOrangeLight,
-                label = "班 调休补班"
+                color = workdayText,
+                bgColor = workdayBg,
+                label = "班 调休补班/强班"
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
@@ -264,11 +279,11 @@ fun CalendarLegend(modifier: Modifier = Modifier) {
             Box(
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                    .border(1.5.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
                 Text(
-                    text = "外框 手动覆盖设定(强开强关)",
+                    text = "边框 手动覆盖设定(强制执行)",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.secondary,
                     fontWeight = FontWeight.Medium

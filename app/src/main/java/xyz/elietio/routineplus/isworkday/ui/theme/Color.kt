@@ -50,13 +50,17 @@ val md_dark_surfaceContainerHigh = Color(0xFF2B2930)
 val md_dark_outline = Color(0xFF91909A)
 val md_dark_error = Color(0xFFFFB4AB)
 
-// ── Calendar-specific ──
-val holidayRed = Color(0xFFE53935)
-val holidayRedLight = Color(0xFFFFEBEE)
-val holidayRedDark = Color(0xFF4E1515)
-val workdayOrange = Color(0xFFFB8C00)
-val workdayOrangeLight = Color(0xFFFFF3E0)
-val workdayOrangeDark = Color(0xFF4A2C00)
+// ── Calendar-specific Premium Palette (Morandi Soft Cherry Pink & Turquoise Green) ──
+val holidayRed = Color(0xFFC62828)           // 浅色模式放假文字（深樱桃红）
+val holidayRedLight = Color(0xFFFFF1F1)      // 浅色模式放假背景（透亮樱粉）
+val holidayRedDark = Color(0xFF2D1616)       // 深色模式放假背景（暗霞夜红）
+val holidayRedTextDark = Color(0xFFFF8A80)   // 深色模式放假文字（柔樱桃红）
+
+val workdayGreen = Color(0xFF00796B)         // 浅色模式补班文字（松石湖绿）
+val workdayGreenLight = Color(0xFFE0F2F1)    // 浅色模式补班背景（薄荷青绿）
+val workdayGreenDark = Color(0xFF0B2523)     // 深色模式补班背景（夜幕松绿）
+val workdayGreenTextDark = Color(0xFF80CBC4) // 深色模式补班文字（薄荷浅青）
+
 val todayHighlight = Color(0xFF4758A9)
 
 // ── Sandbox Terminal ──
