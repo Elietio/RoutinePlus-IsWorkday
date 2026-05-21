@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import androidx.datastore.preferences.core.longPreferencesKey
 import xyz.elietio.routineplus.isworkday.domain.model.AlarmConfig
 import xyz.elietio.routineplus.isworkday.domain.model.ConditionMode
 import javax.inject.Inject
@@ -25,7 +26,22 @@ class ConfigRepository @Inject constructor(
         val KEY_MINUTE = intPreferencesKey("minute")
         val KEY_LABEL = stringPreferencesKey("label")
         val KEY_SKIP_UI = booleanPreferencesKey("skip_ui")
+
+        // ── Last Alarm Metadata Cache ──
+        val KEY_LAST_ALARM_DATE = stringPreferencesKey("last_alarm_date")
+        val KEY_LAST_ALARM_HOUR = intPreferencesKey("last_alarm_hour")
+        val KEY_LAST_ALARM_MINUTE = intPreferencesKey("last_alarm_minute")
+        val KEY_LAST_ALARM_LABEL = stringPreferencesKey("last_alarm_label")
+        val KEY_LAST_ALARM_TIMESTAMP = longPreferencesKey("last_alarm_timestamp")
     }
+
+    data class LastAlarmInfo(
+        val date: String,
+        val hour: Int,
+        val minute: Int,
+        val label: String,
+        val timestamp: Long
+    )
 
     val alarmConfigFlow: Flow<AlarmConfig> = dataStore.data.map { prefs ->
         AlarmConfig(
@@ -52,6 +68,27 @@ class ConfigRepository @Inject constructor(
             prefs[KEY_MINUTE] = config.minute
             prefs[KEY_LABEL] = config.label
             prefs[KEY_SKIP_UI] = config.skipUi
+        }
+    }
+
+    suspend fun getLastAlarmInfo(): LastAlarmInfo {
+        val prefs = dataStore.data.first()
+        return LastAlarmInfo(
+            date = prefs[KEY_LAST_ALARM_DATE] ?: "",
+            hour = prefs[KEY_LAST_ALARM_HOUR] ?: -1,
+            minute = prefs[KEY_LAST_ALARM_MINUTE] ?: -1,
+            label = prefs[KEY_LAST_ALARM_LABEL] ?: "",
+            timestamp = prefs[KEY_LAST_ALARM_TIMESTAMP] ?: 0L
+        )
+    }
+
+    suspend fun saveLastAlarmInfo(info: LastAlarmInfo) {
+        dataStore.edit { prefs ->
+            prefs[KEY_LAST_ALARM_DATE] = info.date
+            prefs[KEY_LAST_ALARM_HOUR] = info.hour
+            prefs[KEY_LAST_ALARM_MINUTE] = info.minute
+            prefs[KEY_LAST_ALARM_LABEL] = info.label
+            prefs[KEY_LAST_ALARM_TIMESTAMP] = info.timestamp
         }
     }
 }

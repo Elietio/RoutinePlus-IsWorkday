@@ -7,6 +7,7 @@ import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import xyz.elietio.routineplus.isworkday.data.repository.ConfigRepository
 import xyz.elietio.routineplus.isworkday.domain.model.DayType
 import xyz.elietio.routineplus.isworkday.domain.usecase.CheckDayTypeUseCase
@@ -47,40 +48,45 @@ class ShortcutActivity : ComponentActivity() {
     private fun handleExecute() {
         lifecycleScope.launch {
             try {
-                // 从 DataStore 读取用户保存的配置
-                val config = configRepository.getAlarmConfig()
-                
-                Log.i(TAG, "Execute config: offset=${config.targetOffset}, mode=${config.conditionMode}, " +
-                        "time=${config.hour}:${config.minute}, label=${config.label}")
+                withTimeoutOrNull(5000) {
+                    // 从 DataStore 读取用户保存的配置
+                    val config = configRepository.getAlarmConfig()
+                    
+                    Log.i(TAG, "Execute config: offset=${config.targetOffset}, mode=${config.conditionMode}, " +
+                            "time=${config.hour}:${config.minute}, label=${config.label}")
 
-                // Step 1: 判定日期类型
-                val chinaZone = ZoneId.of("Asia/Shanghai")
-                val targetDate = LocalDate.now(chinaZone).plusDays(config.targetOffset.toLong())
-                val dayType = checkDayTypeUseCase(config.targetOffset)
+                    // Step 1: 判定日期类型
+                    val chinaZone = ZoneId.of("Asia/Shanghai")
+                    val targetDate = LocalDate.now(chinaZone).plusDays(config.targetOffset.toLong())
+                    val dayType = checkDayTypeUseCase(config.targetOffset)
 
-                val offsetLabel = if (config.targetOffset == 0) "今天" else "明天"
-                val dayTypeLabel = when (dayType) {
-                    DayType.WORKDAY -> "工作日"
-                    DayType.OFFDAY -> "休息日"
-                    DayType.NORMAL -> "普通日"
-                }
+                    val offsetLabel = if (config.targetOffset == 0) "今天" else "明天"
+                    val dayTypeLabel = when (dayType) {
+                        DayType.WORKDAY -> "工作日"
+                        DayType.OFFDAY -> "休息日"
+                        DayType.NORMAL -> "普通日"
+                    }
 
-                Log.i(TAG, "Day check: $targetDate ($offsetLabel) -> $dayTypeLabel")
-                showToast("$offsetLabel $targetDate: $dayTypeLabel")
+                    Log.i(TAG, "Day check: $targetDate ($offsetLabel) -> $dayTypeLabel")
+                    showToast("$offsetLabel $targetDate: $dayTypeLabel")
 
-                // Step 2: 执行闹钟逻辑
-                val result = setAlarmUseCase(config)
-                Log.i(TAG, "Alarm result: shouldSet=${result.shouldSetAlarm}, " +
-                        "alarmSet=${result.alarmSet}, message=${result.message}")
+                    // Step 2: 执行闹钟逻辑
+                    val result = setAlarmUseCase(config)
+                    Log.i(TAG, "Alarm result: shouldSet=${result.shouldSetAlarm}, " +
+                            "alarmSet=${result.alarmSet}, message=${result.message}")
 
-                // Step 3: 显示结果 Toast (纯文字无符号)
-                val timeStr = "${config.hour}:${config.minute.toString().padStart(2, '0')}"
-                if (result.alarmSet) {
-                    showToast("闹钟已设置: $timeStr - ${config.label}")
-                } else if (!result.shouldSetAlarm) {
-                    showToast("已跳过: $dayTypeLabel 不符合触发条件")
-                } else {
-                    showToast("闹钟创建失败: ${result.message}")
+                    // Step 3: 显示结果 Toast (纯文字无符号)
+                    val timeStr = "${config.hour}:${config.minute.toString().padStart(2, '0')}"
+                    if (result.alarmSet) {
+                        showToast("闹钟已设置: $timeStr - ${config.label}")
+                    } else if (!result.shouldSetAlarm) {
+                        showToast("已跳过: $dayTypeLabel 不符合触发条件")
+                    } else {
+                        showToast("闹钟创建失败: ${result.message}")
+                    }
+                } ?: run {
+                    Log.w(TAG, "Execute timeout after 5000ms")
+                    showToast("执行超时已结束")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Execute failed", e)
@@ -97,13 +103,18 @@ class ShortcutActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             try {
-                val result = syncHolidayUseCase()
-                if (result.isSuccess) {
-                    Log.i(TAG, "Sync completed successfully")
-                    showToast("节假日数据同步成功")
-                } else {
-                    Log.w(TAG, "Sync failed", result.exceptionOrNull())
-                    showToast("同步失败: ${result.exceptionOrNull()?.message}")
+                withTimeoutOrNull(10000) {
+                    val result = syncHolidayUseCase()
+                    if (result.isSuccess) {
+                        Log.i(TAG, "Sync completed successfully")
+                        showToast("节假日数据同步成功")
+                    } else {
+                        Log.w(TAG, "Sync failed", result.exceptionOrNull())
+                        showToast("同步失败: ${result.exceptionOrNull()?.message}")
+                    }
+                } ?: run {
+                    Log.w(TAG, "Sync timeout after 10000ms")
+                    showToast("数据同步超时，已在后台运行")
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Sync error", e)

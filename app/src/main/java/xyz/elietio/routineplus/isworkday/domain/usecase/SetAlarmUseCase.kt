@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.AlarmClock
 import dagger.hilt.android.qualifiers.ApplicationContext
+import xyz.elietio.routineplus.isworkday.data.repository.ConfigRepository
 import xyz.elietio.routineplus.isworkday.data.repository.HolidayRepository
 import xyz.elietio.routineplus.isworkday.domain.model.AlarmConfig
 import xyz.elietio.routineplus.isworkday.domain.model.ConditionMode
@@ -15,7 +16,8 @@ import javax.inject.Inject
 class SetAlarmUseCase @Inject constructor(
     @ApplicationContext private val context: Context,
     private val checkDayType: CheckDayTypeUseCase,
-    private val repository: HolidayRepository
+    private val repository: HolidayRepository,
+    private val configRepository: ConfigRepository
 ) {
     private val chinaZone = ZoneId.of("Asia/Shanghai")
 
@@ -74,6 +76,28 @@ class SetAlarmUseCase @Inject constructor(
             )
         }
 
+        // ── Idempotence & Anti-Flicker Protection ──
+        val lastAlarm = configRepository.getLastAlarmInfo()
+        val timeDiff = System.currentTimeMillis() - lastAlarm.timestamp
+        val isSameDate = lastAlarm.date == targetDate.toString()
+        val isSameTime = lastAlarm.hour == alarmHour && lastAlarm.minute == alarmMinute
+        val isSameLabel = lastAlarm.label == config.label
+
+        if ((isSameDate && isSameTime && isSameLabel) || timeDiff < 5000L) {
+            val duplicateMsg = if (timeDiff < 5000L) {
+                "触发过频，防闪烁拦截: ${alarmHour}:${alarmMinute.toString().padStart(2, '0')}"
+            } else {
+                "闹钟已就绪: ${alarmHour}:${alarmMinute.toString().padStart(2, '0')}"
+            }
+            android.util.Log.i("SetAlarmUseCase", "Idempotence / Anti-Flicker protection triggered: $duplicateMsg")
+            return ExecutionResult(
+                dayType = dayType,
+                shouldSetAlarm = true,
+                alarmSet = true,
+                message = duplicateMsg
+            )
+        }
+
         return try {
             val intent = Intent(AlarmClock.ACTION_SET_ALARM).apply {
                 putExtra(AlarmClock.EXTRA_HOUR, alarmHour)
@@ -83,6 +107,17 @@ class SetAlarmUseCase @Inject constructor(
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             context.startActivity(intent)
+
+            // Cache successful alarm setup parameters
+            configRepository.saveLastAlarmInfo(
+                ConfigRepository.LastAlarmInfo(
+                    date = targetDate.toString(),
+                    hour = alarmHour,
+                    minute = alarmMinute,
+                    label = config.label,
+                    timestamp = System.currentTimeMillis()
+                )
+            )
 
             val successMsg = if (overrideReason != null) {
                 "闹钟已创建(覆盖): ${alarmHour}:${alarmMinute.toString().padStart(2, '0')} - ${config.label}"
