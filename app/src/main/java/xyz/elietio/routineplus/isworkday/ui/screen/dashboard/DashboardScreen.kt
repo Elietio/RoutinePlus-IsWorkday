@@ -38,7 +38,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,6 +54,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.YearMonth
+import java.time.temporal.ChronoUnit
 import androidx.hilt.navigation.compose.hiltViewModel
 import xyz.elietio.routineplus.isworkday.ui.component.CalendarGrid
 import xyz.elietio.routineplus.isworkday.ui.component.CalendarLegend
@@ -72,6 +77,31 @@ fun DashboardScreen(
     val selectedDates by viewModel.selectedDates.collectAsState()
 
     val monthFormatter = DateTimeFormatter.ofPattern("yyyy年 M月", Locale.CHINA)
+
+    val initialMonth = remember { YearMonth.now(java.time.ZoneId.of("Asia/Shanghai")) }
+    val totalPages = 240
+    val initialPage = 120
+
+    val pagerState = rememberPagerState(
+        initialPage = initialPage,
+        pageCount = { totalPages }
+    )
+
+    // Month Navigation Click -> Smooth Pager Scroll
+    LaunchedEffect(currentMonth) {
+        val targetPage = initialPage + ChronoUnit.MONTHS.between(initialMonth, currentMonth).toInt()
+        if (pagerState.currentPage != targetPage && targetPage in 0 until totalPages) {
+            pagerState.animateScrollToPage(targetPage)
+        }
+    }
+
+    // Gesture Swipe Pager -> Select Month
+    LaunchedEffect(pagerState.currentPage) {
+        val targetMonth = initialMonth.plusMonths((pagerState.currentPage - initialPage).toLong())
+        if (currentMonth != targetMonth) {
+            viewModel.selectMonth(targetMonth)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -108,13 +138,19 @@ fun DashboardScreen(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        CalendarGrid(
-            yearMonth = currentMonth,
-            holidays = holidays,
-            overridesMap = overridesMap,
-            selectedDates = selectedDates,
-            onDayClick = { viewModel.toggleDateSelection(it) }
-        )
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier.fillMaxWidth()
+        ) { page ->
+            val pageMonth = initialMonth.plusMonths((page - initialPage).toLong())
+            CalendarGrid(
+                yearMonth = pageMonth,
+                holidays = holidays,
+                overridesMap = overridesMap,
+                selectedDates = selectedDates,
+                onDayClick = { viewModel.toggleDateSelection(it) }
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

@@ -79,6 +79,8 @@ fun DayCell(
         else -> Modifier
     }
 
+    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+
     Box(
         modifier = modifier
             .aspectRatio(1f)
@@ -86,7 +88,10 @@ fun DayCell(
             .clip(CircleShape)
             .then(borderModifier)
             .then(bgModifier)
-            .clickable(enabled = isCurrentMonth) { onClick(date) },
+            .clickable(enabled = isCurrentMonth) {
+                haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
+                onClick(date)
+            },
         contentAlignment = Alignment.Center
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {

@@ -67,10 +67,16 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
+    fun selectMonth(yearMonth: YearMonth) {
+        if (_currentMonth.value != yearMonth) {
+            _currentMonth.value = yearMonth
+            clearSelectedDates()
+            loadMonthData()
+        }
+    }
+
     fun navigateMonth(offset: Int) {
-        _currentMonth.value = _currentMonth.value.plusMonths(offset.toLong())
-        clearSelectedDates()
-        loadMonthData()
+        selectMonth(_currentMonth.value.plusMonths(offset.toLong()))
     }
 
     fun toggleDateSelection(date: LocalDate) {
@@ -122,16 +128,16 @@ class DashboardViewModel @Inject constructor(
     private fun loadMonthData() {
         viewModelScope.launch {
             val ym = _currentMonth.value
-            val start = ym.atDay(1).toString()
-            val end = ym.atEndOfMonth().toString()
+            val start = ym.minusMonths(2).atDay(1).toString()
+            val end = ym.plusMonths(2).atEndOfMonth().toString()
             repository.getDaysBetween(start, end).collect { days ->
                 _holidays.value = days
             }
         }
         viewModelScope.launch {
             val ym = _currentMonth.value
-            val start = ym.atDay(1).toString()
-            val end = ym.atEndOfMonth().toString()
+            val start = ym.minusMonths(2).atDay(1).toString()
+            val end = ym.plusMonths(2).atEndOfMonth().toString()
             repository.getOverridesBetween(start, end).collect { list ->
                 _overrides.value = list
             }
