@@ -36,7 +36,7 @@ class App : Application(), Configuration.Provider {
             .build()
 
         val syncRequest = PeriodicWorkRequestBuilder<HolidaySyncWorker>(
-            12, TimeUnit.HOURS
+            24, TimeUnit.HOURS
         )
             .setConstraints(constraints)
             .build()
