@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.provider.AlarmClock
 import dagger.hilt.android.qualifiers.ApplicationContext
+import xyz.elietio.routineplus.isworkday.R
 import xyz.elietio.routineplus.isworkday.data.repository.ConfigRepository
 import xyz.elietio.routineplus.isworkday.data.repository.HolidayRepository
 import xyz.elietio.routineplus.isworkday.domain.model.AlarmConfig
@@ -132,6 +133,7 @@ class SetAlarmUseCase @Inject constructor(
                 message = successMsg
             )
         } catch (e: Exception) {
+            showFailureNotification(e.message ?: "未知异常")
             ExecutionResult(
                 dayType = dayType,
                 shouldSetAlarm = true,
@@ -139,5 +141,47 @@ class SetAlarmUseCase @Inject constructor(
                 message = "闹钟创建失败: ${e.message}"
             )
         }
+    }
+
+    private fun showFailureNotification(errorMsg: String) {
+        val channelId = "alarm_failure_channel"
+        val channelName = "RoutinePlus 错误警报"
+        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as android.app.NotificationManager
+
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            val channel = android.app.NotificationChannel(
+                channelId,
+                channelName,
+                android.app.NotificationManager.IMPORTANCE_HIGH
+            ).apply {
+                description = "闹钟设置失败及系统限制权限阻断警报"
+            }
+            notificationManager.createNotificationChannel(channel)
+        }
+
+        val settingsIntent = Intent(android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = android.net.Uri.fromParts("package", context.packageName, null)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        val pendingIntent = android.app.PendingIntent.getActivity(
+            context,
+            0,
+            settingsIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = androidx.core.app.NotificationCompat.Builder(context, channelId)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentTitle("RoutinePlus 闹钟设置失败警告")
+            .setContentText("由于系统限制(如后台弹出界面权限未开启)，无法自动设置闹钟。点按此处前往设置授权。原因: $errorMsg")
+            .setStyle(androidx.core.app.NotificationCompat.BigTextStyle()
+                .bigText("由于系统限制(如后台弹出界面权限或精确闹钟权限未开启)，无法自动设置闹钟。请点按此通知前往应用信息设置页，检查并开启对应的“后台弹出界面”、“显示在其他应用上层”或“精确闹钟”权限。\n\n具体失败原因: $errorMsg"))
+            .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+            .setCategory(androidx.core.app.NotificationCompat.CATEGORY_ERROR)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        notificationManager.notify(1001, notification)
     }
 }

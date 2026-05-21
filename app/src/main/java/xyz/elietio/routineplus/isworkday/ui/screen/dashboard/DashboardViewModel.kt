@@ -3,10 +3,12 @@ package xyz.elietio.routineplus.isworkday.ui.screen.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -30,11 +32,31 @@ class DashboardViewModel @Inject constructor(
     private val _currentMonth = MutableStateFlow(YearMonth.now(chinaZone))
     val currentMonth: StateFlow<YearMonth> = _currentMonth.asStateFlow()
 
-    private val _holidays = MutableStateFlow<List<HolidayEntity>>(emptyList())
-    val holidays: StateFlow<List<HolidayEntity>> = _holidays.asStateFlow()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val holidays: StateFlow<List<HolidayEntity>> = _currentMonth
+        .flatMapLatest { ym ->
+            val start = ym.minusMonths(2).atDay(1).toString()
+            val end = ym.plusMonths(2).atEndOfMonth().toString()
+            repository.getDaysBetween(start, end)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
-    private val _overrides = MutableStateFlow<List<OverrideEntity>>(emptyList())
-    val overrides: StateFlow<List<OverrideEntity>> = _overrides.asStateFlow()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val _overrides: StateFlow<List<OverrideEntity>> = _currentMonth
+        .flatMapLatest { ym ->
+            val start = ym.minusMonths(2).atDay(1).toString()
+            val end = ym.plusMonths(2).atEndOfMonth().toString()
+            repository.getOverridesBetween(start, end)
+        }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     val overridesMap: StateFlow<Map<String, OverrideEntity>> = _overrides
         .map { list -> list.associateBy { it.date } }
@@ -54,7 +76,6 @@ class DashboardViewModel @Inject constructor(
     val selectedDates: StateFlow<Set<LocalDate>> = _selectedDates.asStateFlow()
 
     init {
-        loadMonthData()
         loadSyncStatus()
         checkAndInitialSync()
     }
@@ -71,7 +92,6 @@ class DashboardViewModel @Inject constructor(
         if (_currentMonth.value != yearMonth) {
             _currentMonth.value = yearMonth
             clearSelectedDates()
-            loadMonthData()
         }
     }
 
@@ -96,7 +116,6 @@ class DashboardViewModel @Inject constructor(
         viewModelScope.launch {
             _isSyncing.value = true
             syncHolidayUseCase()
-            loadMonthData()
             loadSyncStatus()
             _isSyncing.value = false
         }
@@ -121,26 +140,6 @@ class DashboardViewModel @Inject constructor(
                 repository.insertOverrides(list)
             }
             clearSelectedDates()
-            loadMonthData()
-        }
-    }
-
-    private fun loadMonthData() {
-        viewModelScope.launch {
-            val ym = _currentMonth.value
-            val start = ym.minusMonths(2).atDay(1).toString()
-            val end = ym.plusMonths(2).atEndOfMonth().toString()
-            repository.getDaysBetween(start, end).collect { days ->
-                _holidays.value = days
-            }
-        }
-        viewModelScope.launch {
-            val ym = _currentMonth.value
-            val start = ym.minusMonths(2).atDay(1).toString()
-            val end = ym.plusMonths(2).atEndOfMonth().toString()
-            repository.getOverridesBetween(start, end).collect { list ->
-                _overrides.value = list
-            }
         }
     }
 

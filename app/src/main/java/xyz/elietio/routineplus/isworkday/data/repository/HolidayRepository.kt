@@ -120,8 +120,27 @@ class HolidayRepository @Inject constructor(
         val currentYear = java.time.LocalDate.now(CHINA_ZONE).year
         val r1 = syncYear(currentYear)
         val r2 = syncYear(currentYear + 1)
-        return if (r1.isSuccess || r2.isSuccess) Result.success(Unit)
-        else Result.failure(r1.exceptionOrNull() ?: Exception("Sync failed"))
+        return if (r1.isSuccess || r2.isSuccess) {
+            cleanExpiredData()
+            Result.success(Unit)
+        } else {
+            Result.failure(r1.exceptionOrNull() ?: Exception("Sync failed"))
+        }
+    }
+
+    suspend fun cleanExpiredData() {
+        try {
+            val today = java.time.LocalDate.now(CHINA_ZONE)
+            val currentYear = today.year
+            val maxYearToDelete = currentYear - 2
+            dao.deleteDaysBeforeOrEqualYear(maxYearToDelete)
+            
+            val todayStr = today.toString()
+            dao.deleteOverridesBeforeDate(todayStr)
+            Log.i(TAG, "Housekeeping complete: deleted holiday_days <= $maxYearToDelete, holiday_overrides < $todayStr")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to perform database housekeeping", e)
+        }
     }
 
     suspend fun getLastSyncTime(): Long? {

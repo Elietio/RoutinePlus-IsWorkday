@@ -51,4 +51,12 @@ interface HolidayDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertSyncMeta(meta: SyncMetaEntity)
+
+    // --- Housekeeping ---
+
+    @Query("DELETE FROM holiday_days WHERE year <= :maxYear")
+    suspend fun deleteDaysBeforeOrEqualYear(maxYear: Int)
+
+    @Query("DELETE FROM holiday_overrides WHERE date < :todayDate")
+    suspend fun deleteOverridesBeforeDate(todayDate: String)
 }

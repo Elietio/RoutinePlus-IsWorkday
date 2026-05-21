@@ -19,6 +19,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -62,7 +65,17 @@ fun DayCell(
     val workdayBg = if (isDark) workdayGreenDark else workdayGreenLight
     val workdayText = if (isDark) workdayGreenTextDark else workdayGreen
 
-    val textColor = when {
+    // Compute target background color
+    val targetBgColor = when {
+        isSelected -> MaterialTheme.colorScheme.primary
+        isToday -> MaterialTheme.colorScheme.primaryContainer
+        isOffDay == true && isCurrentMonth -> holidayBg
+        isOffDay == false && isCurrentMonth -> workdayBg
+        else -> Color.Transparent
+    }
+
+    // Compute target text color
+    val targetTextColor = when {
         !isCurrentMonth -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
         isSelected -> MaterialTheme.colorScheme.onPrimary
         isToday -> MaterialTheme.colorScheme.onPrimaryContainer
@@ -72,12 +85,23 @@ fun DayCell(
         else -> MaterialTheme.colorScheme.onSurface
     }
 
-    val bgModifier = when {
-        isSelected -> Modifier.background(MaterialTheme.colorScheme.primary, CircleShape)
-        isToday -> Modifier.background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
-        isOffDay == true && isCurrentMonth -> Modifier.background(holidayBg, CircleShape)
-        isOffDay == false && isCurrentMonth -> Modifier.background(workdayBg, CircleShape)
-        else -> Modifier
+    // Animate color changes
+    val animatedBgColor by animateColorAsState(
+        targetValue = targetBgColor,
+        animationSpec = tween(durationMillis = 250),
+        label = "dayBgColor"
+    )
+
+    val animatedTextColor by animateColorAsState(
+        targetValue = targetTextColor,
+        animationSpec = tween(durationMillis = 250),
+        label = "dayTextColor"
+    )
+
+    val bgModifier = if (animatedBgColor != Color.Transparent) {
+        Modifier.background(animatedBgColor, CircleShape)
+    } else {
+        Modifier
     }
 
     val borderModifier = when {
@@ -105,7 +129,7 @@ fun DayCell(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = date.dayOfMonth.toString(),
-                color = textColor,
+                color = animatedTextColor,
                 fontSize = 13.sp,
                 fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
                 textAlign = TextAlign.Center
