@@ -13,11 +13,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Alarm
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.ListItemDefaults
@@ -76,7 +78,7 @@ fun ConfigScreen(
             TopAppBar(
                 title = { Text("规则配置", style = MaterialTheme.typography.titleLarge) },
                 actions = {
-                    TextButton(
+                    IconButton(
                         onClick = {
                             coroutineScope.launch {
                                 kotlinx.coroutines.withTimeoutOrNull(1500) {
@@ -85,7 +87,7 @@ fun ConfigScreen(
                             }
                         }
                     ) {
-                        Text("保存", style = MaterialTheme.typography.labelLarge)
+                        Icon(Icons.Default.Save, contentDescription = "保存")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(

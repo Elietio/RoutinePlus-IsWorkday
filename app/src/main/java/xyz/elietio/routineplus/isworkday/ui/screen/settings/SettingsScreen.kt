@@ -10,9 +10,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.material3.ListItemDefaults
@@ -67,10 +71,13 @@ fun SettingsScreen(
             TopAppBar(
                 title = { Text("全局设置", style = MaterialTheme.typography.titleLarge) },
                 actions = {
-                    TextButton(
+                    IconButton(
                         onClick = { viewModel.save() }
                     ) {
-                        Text("保存", style = MaterialTheme.typography.labelLarge)
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = "保存"
+                        )
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -209,7 +216,7 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     
                     Text("RoutinePlus: IsWorkday", style = MaterialTheme.typography.titleLarge)
-                    Text("版本 1.3.0 (M3 Redesign)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("版本 1.3.3 (M3 Redesign)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
