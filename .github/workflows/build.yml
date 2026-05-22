@@ -24,6 +24,12 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      - name: 恢复 debug.keystore
+        run: |
+          echo "$DEBUG_KEYSTORE_BASE64" | base64 -d > app/debug.keystore
+        env:
+          DEBUG_KEYSTORE_BASE64: ${{ secrets.DEBUG_KEYSTORE_BASE64 }}
+          
       - name: Generate Gradle Wrapper
         run: gradle wrapper --gradle-version 8.11.1
 
