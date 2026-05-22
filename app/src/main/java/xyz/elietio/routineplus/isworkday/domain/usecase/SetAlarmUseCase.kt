@@ -46,15 +46,15 @@ class SetAlarmUseCase @Inject constructor(
                 alarmHour = override.customHour ?: config.hour
                 alarmMinute = override.customMinute ?: config.minute
                 overrideReason = if (override.customHour != null && override.customMinute != null) {
-                    "用户覆盖(强制设定闹钟, 自定义时间: ${alarmHour}:${alarmMinute.toString().padStart(2, '0')})"
+                    "用户覆盖(设定闹钟, 自定义时间: ${alarmHour}:${alarmMinute.toString().padStart(2, '0')})"
                 } else {
-                    "用户覆盖(强制设定闹钟, 默认时间)"
+                    "用户覆盖(设定闹钟, 默认时间)"
                 }
             } else {
                 shouldSet = false
                 alarmHour = config.hour
                 alarmMinute = config.minute
-                overrideReason = "用户覆盖(强制忽略闹钟)"
+                overrideReason = "用户覆盖(忽略闹钟)"
             }
         } else {
             shouldSet = when (config.conditionMode) {

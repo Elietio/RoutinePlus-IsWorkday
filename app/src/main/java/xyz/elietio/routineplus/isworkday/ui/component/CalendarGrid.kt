@@ -229,8 +229,8 @@ fun CalendarGrid(
                         }
 
                         val label = when {
-                            overrideInfo != null && overrideInfo.overrideType == 1 -> "强班"
-                            overrideInfo != null && overrideInfo.overrideType == 2 -> "强休"
+                            overrideInfo != null && overrideInfo.overrideType == 1 -> "班"
+                            overrideInfo != null && overrideInfo.overrideType == 2 -> "休"
                             holidayInfo != null && holidayInfo.isOffDay -> "休"
                             holidayInfo != null && !holidayInfo.isOffDay -> "班"
                             else -> null
@@ -277,13 +277,13 @@ fun CalendarLegend(modifier: Modifier = Modifier) {
             LegendChip(
                 color = holidayText,
                 bgColor = holidayBg,
-                label = "休 法定假日/强休"
+                label = "休 法定假日/手动修改"
             )
             Spacer(modifier = Modifier.size(16.dp))
             LegendChip(
                 color = workdayText,
                 bgColor = workdayBg,
-                label = "班 调休补班/强班"
+                label = "班 调休补班/手动修改"
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
@@ -306,7 +306,7 @@ fun CalendarLegend(modifier: Modifier = Modifier) {
                 )
                 Spacer(modifier = Modifier.size(6.dp))
                 Text(
-                    text = "带外框日期：已手动修改 (强制生效)",
+                    text = "带外框日期：已手动修改",
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                     fontWeight = FontWeight.Medium

@@ -264,8 +264,8 @@ fun DashboardScreen(
                 // Override Radio Options
                 val options = listOf(
                     0 to "跟随法定规则 (默认)",
-                    1 to "强制设定闹钟 (比如临时加班)",
-                    2 to "强制忽略闹钟 (比如请假/休假)"
+                    1 to "设定闹钟 (比如临时加班)",
+                    2 to "忽略闹钟 (比如请假/休假)"
                 )
 
                 Column(modifier = Modifier.selectableGroup()) {
