@@ -277,13 +277,13 @@ fun CalendarLegend(modifier: Modifier = Modifier) {
             LegendChip(
                 color = holidayText,
                 bgColor = holidayBg,
-                label = "休 法定假日/手动修改"
+                label = "休 法定假日"
             )
             Spacer(modifier = Modifier.size(16.dp))
             LegendChip(
                 color = workdayText,
                 bgColor = workdayBg,
-                label = "班 调休补班/手动修改"
+                label = "班 调休补班"
             )
         }
         Spacer(modifier = Modifier.height(10.dp))
