@@ -8,10 +8,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -39,23 +43,31 @@ fun SandboxTerminal(
 ) {
     val scrollState = rememberScrollState()
 
-    Column(
+    OutlinedCard(
         modifier = modifier
             .fillMaxWidth()
-            .heightIn(min = 200.dp, max = 400.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(terminalBg)
-            .padding(12.dp)
-            .verticalScroll(scrollState)
+            .heightIn(min = 200.dp, max = 400.dp),
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.outlinedCardColors(containerColor = terminalBg),
+        border = CardDefaults.outlinedCardBorder().copy(
+            brush = SolidColor(MaterialTheme.colorScheme.outlineVariant)
+        )
     ) {
-        lines.forEach { line ->
-            Text(
-                text = formatLine(line),
-                fontFamily = FontFamily.Monospace,
-                fontSize = 12.sp,
-                lineHeight = 18.sp,
-                modifier = Modifier.padding(vertical = 1.dp)
-            )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .verticalScroll(scrollState)
+                .padding(12.dp)
+        ) {
+            lines.forEach { line ->
+                Text(
+                    text = formatLine(line),
+                    fontFamily = FontFamily.Monospace,
+                    fontSize = 12.sp,
+                    lineHeight = 18.sp,
+                    modifier = Modifier.padding(vertical = 1.dp)
+                )
+            }
         }
     }
 }

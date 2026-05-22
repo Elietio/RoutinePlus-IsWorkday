@@ -1,5 +1,6 @@
 package xyz.elietio.routineplus.isworkday.ui.screen.sandbox
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,30 +9,35 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
+import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.ClearAll
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -42,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import xyz.elietio.routineplus.isworkday.domain.model.AlarmConfig
@@ -65,11 +72,13 @@ fun SandboxScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showRealTestConfirm by remember { mutableStateOf(false) }
 
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+
     if (showRealTestConfirm) {
         AlertDialog(
             onDismissRequest = { showRealTestConfirm = false },
-            title = { Text("确认真实测试") },
-            text = { Text("这将使用当前配置创建一个真实的系统闹钟，确定继续？") },
+            title = { Text("确认真实测试", style = MaterialTheme.typography.titleMedium) },
+            text = { Text("这将使用当前配置在系统闹钟中创建一条真实的验证广播，确定继续？") },
             confirmButton = {
                 TextButton(onClick = {
                     showRealTestConfirm = false
@@ -78,114 +87,170 @@ fun SandboxScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showRealTestConfirm = false }) { Text("取消") }
-            }
+            },
+            shape = MaterialTheme.shapes.extraLarge,
+            tonalElevation = 6.dp
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            MediumTopAppBar(
+                title = { Text("沙盒测试", style = MaterialTheme.typography.headlineMedium) },
+                actions = {
+                    IconButton(onClick = { viewModel.clearTerminal() }) {
+                        Icon(Icons.Default.ClearAll, contentDescription = "清空终端")
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+                colors = TopAppBarDefaults.mediumTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("沙盒测试", style = MaterialTheme.typography.headlineMedium)
-            IconButton(onClick = { viewModel.clearTerminal() }) {
-                Icon(Icons.Default.ClearAll, "清空")
-            }
-        }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Parameters
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                // Simulated date
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            // Parameters (模拟配置参数)
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text("模拟日期: ${simulatedDate?.toString() ?: "当前日期"}")
-                    TextButton(onClick = { showDatePicker = true }) { Text("选择") }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Target offset
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    SegmentedButton(
-                        selected = targetOffset == 0,
-                        onClick = { targetOffset = 0 },
-                        shape = SegmentedButtonDefaults.itemShape(0, 2)
-                    ) { Text("今天") }
-                    SegmentedButton(
-                        selected = targetOffset == 1,
-                        onClick = { targetOffset = 1 },
-                        shape = SegmentedButtonDefaults.itemShape(1, 2)
-                    ) { Text("明天") }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Condition
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    ConditionMode.entries.forEachIndexed { index, mode ->
-                        SegmentedButton(
-                            selected = conditionMode == mode,
-                            onClick = { conditionMode = mode },
-                            shape = SegmentedButtonDefaults.itemShape(index, ConditionMode.entries.size)
-                        ) {
+                    // Simulated date selection row
+                    ListItem(
+                        headlineContent = { Text("模拟运行日期", style = MaterialTheme.typography.titleMedium) },
+                        supportingContent = {
                             Text(
-                                when (mode) {
-                                    ConditionMode.WORKDAY -> "工作日"
-                                    ConditionMode.OFFDAY -> "休息日"
-                                    ConditionMode.ALWAYS -> "每天"
-                                }
+                                text = "设定仿真环境的时间，为空则默认使用北京时间当前日期",
+                                style = MaterialTheme.typography.bodySmall
                             )
+                        },
+                        trailingContent = {
+                            OutlinedButton(
+                                onClick = { showDatePicker = true }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CalendarToday,
+                                    contentDescription = null,
+                                    modifier = Modifier.padding(end = 4.dp)
+                                )
+                                Text(simulatedDate?.toString() ?: "当前日期")
+                            }
+                        },
+                        colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+                        modifier = Modifier.padding(0.dp)
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Target offset
+                    ListItem(
+                        headlineContent = { Text("校验偏移 (校验目标)", style = MaterialTheme.typography.titleSmall) },
+                        colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+                        modifier = Modifier.padding(0.dp)
+                    )
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        SegmentedButton(
+                            selected = targetOffset == 0,
+                            onClick = { targetOffset = 0 },
+                            shape = SegmentedButtonDefaults.itemShape(0, 2)
+                        ) { Text("今天 Today") }
+                        SegmentedButton(
+                            selected = targetOffset == 1,
+                            onClick = { targetOffset = 1 },
+                            shape = SegmentedButtonDefaults.itemShape(1, 2)
+                        ) { Text("明天 Tomorrow") }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Condition
+                    ListItem(
+                        headlineContent = { Text("判定条件设定", style = MaterialTheme.typography.titleSmall) },
+                        colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+                        modifier = Modifier.padding(0.dp)
+                    )
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        ConditionMode.entries.forEachIndexed { index, mode ->
+                            SegmentedButton(
+                                selected = conditionMode == mode,
+                                onClick = { conditionMode = mode },
+                                shape = SegmentedButtonDefaults.itemShape(index, ConditionMode.entries.size)
+                            ) {
+                                Text(
+                                    when (mode) {
+                                        ConditionMode.WORKDAY -> "仅工作日"
+                                        ConditionMode.OFFDAY -> "仅休息日"
+                                        ConditionMode.ALWAYS -> "每天"
+                                    }
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Actions
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(
-                onClick = {
-                    viewModel.runSimulation(simulatedDate, targetOffset, conditionMode, 8, 30, "通勤闹钟")
-                },
-                enabled = !isRunning,
-                modifier = Modifier.weight(1f)
+            // Actions
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Icon(Icons.Default.PlayArrow, null)
-                Text(" 模拟运行")
+                Button(
+                    onClick = {
+                        viewModel.runSimulation(simulatedDate, targetOffset, conditionMode, 8, 30, "通勤闹钟")
+                    },
+                    enabled = !isRunning,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.PlayArrow, null)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("模拟运行")
+                }
+                OutlinedButton(
+                    onClick = { showRealTestConfirm = true },
+                    enabled = !isRunning,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(Icons.Default.BugReport, null)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("真实测试")
+                }
             }
-            OutlinedButton(
-                onClick = { showRealTestConfirm = true },
-                enabled = !isRunning,
-                modifier = Modifier.weight(1f),
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = MaterialTheme.colorScheme.error
-                )
-            ) {
-                Icon(Icons.Default.BugReport, null)
-                Text(" 真实测试")
-            }
+
+            // Sandbox terminal output
+            ListItem(
+                headlineContent = { Text("控制台终端输出", style = MaterialTheme.typography.titleMedium) },
+                supportingContent = { Text("显示每次模拟及实际测试所产生的底层指令追踪日志", style = MaterialTheme.typography.bodySmall) },
+                colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+                modifier = Modifier.padding(top = 8.dp)
+            )
+
+            SandboxTerminal(
+                lines = lines,
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
         }
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        SandboxTerminal(lines = lines)
     }
 
     if (showDatePicker) {
@@ -204,7 +269,9 @@ fun SandboxScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) { Text("取消") }
-            }
+            },
+            shape = MaterialTheme.shapes.extraLarge,
+            tonalElevation = 6.dp
         ) {
             DatePicker(state = datePickerState)
         }

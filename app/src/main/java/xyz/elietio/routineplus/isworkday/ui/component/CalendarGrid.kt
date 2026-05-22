@@ -3,7 +3,6 @@ package xyz.elietio.routineplus.isworkday.ui.component
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -32,14 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import xyz.elietio.routineplus.isworkday.data.local.entity.HolidayEntity
 import xyz.elietio.routineplus.isworkday.data.local.entity.OverrideEntity
-import xyz.elietio.routineplus.isworkday.ui.theme.holidayRed
-import xyz.elietio.routineplus.isworkday.ui.theme.holidayRedLight
-import xyz.elietio.routineplus.isworkday.ui.theme.holidayRedDark
-import xyz.elietio.routineplus.isworkday.ui.theme.holidayRedTextDark
-import xyz.elietio.routineplus.isworkday.ui.theme.workdayGreen
-import xyz.elietio.routineplus.isworkday.ui.theme.workdayGreenLight
-import xyz.elietio.routineplus.isworkday.ui.theme.workdayGreenDark
-import xyz.elietio.routineplus.isworkday.ui.theme.workdayGreenTextDark
+import xyz.elietio.routineplus.isworkday.ui.theme.LocalHolidayColorScheme
 import java.time.DayOfWeek
 import java.time.LocalDate
 
@@ -55,15 +47,15 @@ fun DayCell(
     onClick: (LocalDate) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val isDark = isSystemInDarkTheme()
     val isWeekend = date.dayOfWeek == DayOfWeek.SATURDAY || date.dayOfWeek == DayOfWeek.SUNDAY
 
-    // ── Morandi Premium Color Adapters ──
-    val holidayBg = if (isDark) holidayRedDark else holidayRedLight
-    val holidayText = if (isDark) holidayRedTextDark else holidayRed
+    // ── Morandi Premium Color Adapters (From Extended Theme Context) ──
+    val holidayColors = LocalHolidayColorScheme.current
+    val holidayBg = holidayColors.holidayBg
+    val holidayText = holidayColors.holidayText
     
-    val workdayBg = if (isDark) workdayGreenDark else workdayGreenLight
-    val workdayText = if (isDark) workdayGreenTextDark else workdayGreen
+    val workdayBg = holidayColors.workdayBg
+    val workdayText = holidayColors.workdayText
 
     // Compute target background color
     val targetBgColor = when {
@@ -117,9 +109,9 @@ fun DayCell(
         modifier = modifier
             .aspectRatio(1f)
             .padding(2.dp)
+            .then(bgModifier)     // 1. 先应用背景色以确保其位于底座层 (修复原 bgModifier 覆盖 borderModifier 导致边框隐藏的致命 Bug)
+            .then(borderModifier) // 2. 再画边框，使其完美叠浮在日历格子的顶层展示
             .clip(CircleShape)
-            .then(borderModifier)
-            .then(bgModifier)
             .clickable(enabled = isCurrentMonth) {
                 haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.LongPress)
                 onClick(date)
@@ -266,12 +258,12 @@ fun CalendarGrid(
 
 @Composable
 fun CalendarLegend(modifier: Modifier = Modifier) {
-    val isDark = isSystemInDarkTheme()
-    val holidayBg = if (isDark) holidayRedDark else holidayRedLight
-    val holidayText = if (isDark) holidayRedTextDark else holidayRed
+    val holidayColors = LocalHolidayColorScheme.current
+    val holidayBg = holidayColors.holidayBg
+    val holidayText = holidayColors.holidayText
     
-    val workdayBg = if (isDark) workdayGreenDark else workdayGreenLight
-    val workdayText = if (isDark) workdayGreenTextDark else workdayGreen
+    val workdayBg = holidayColors.workdayBg
+    val workdayText = holidayColors.workdayText
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -300,16 +292,23 @@ fun CalendarLegend(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .clip(RoundedCornerShape(8.dp))
-                    .border(1.5.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                    .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f), RoundedCornerShape(8.dp))
                     .padding(horizontal = 10.dp, vertical = 4.dp)
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .border(1.5.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.8f), CircleShape)
+                )
+                Spacer(modifier = Modifier.size(6.dp))
                 Text(
-                    text = "边框 手动覆盖设定(强制执行)",
+                    text = "带外框日期：已手动修改 (强制生效)",
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.secondary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                     fontWeight = FontWeight.Medium
                 )
             }

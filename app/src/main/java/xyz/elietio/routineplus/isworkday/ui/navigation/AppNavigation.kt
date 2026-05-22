@@ -1,11 +1,16 @@
 package xyz.elietio.routineplus.isworkday.ui.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -26,11 +31,16 @@ import xyz.elietio.routineplus.isworkday.ui.screen.dashboard.DashboardScreen
 import xyz.elietio.routineplus.isworkday.ui.screen.sandbox.SandboxScreen
 import xyz.elietio.routineplus.isworkday.ui.screen.settings.SettingsScreen
 
-sealed class Screen(val route: String, val label: String, val icon: ImageVector) {
-    data object Dashboard : Screen("dashboard", "日历", Icons.Default.CalendarMonth)
-    data object Config : Screen("config", "配置", Icons.Default.Tune)
-    data object Sandbox : Screen("sandbox", "沙盒", Icons.Default.BugReport)
-    data object Settings : Screen("settings", "设置", Icons.Default.Settings)
+sealed class Screen(
+    val route: String,
+    val label: String,
+    val selectedIcon: ImageVector,
+    val unselectedIcon: ImageVector
+) {
+    data object Dashboard : Screen("dashboard", "日历", Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth)
+    data object Config : Screen("config", "配置", Icons.Filled.Tune, Icons.Outlined.Tune)
+    data object Sandbox : Screen("sandbox", "沙盒", Icons.Filled.BugReport, Icons.Outlined.BugReport)
+    data object Settings : Screen("settings", "设置", Icons.Filled.Settings, Icons.Outlined.Settings)
 }
 
 private val screens = listOf(Screen.Dashboard, Screen.Config, Screen.Sandbox, Screen.Settings)
@@ -45,10 +55,16 @@ fun AppNavigation() {
         bottomBar = {
             NavigationBar {
                 screens.forEach { screen ->
+                    val isSelected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
                     NavigationBarItem(
-                        icon = { Icon(screen.icon, contentDescription = screen.label) },
+                        icon = {
+                            Icon(
+                                imageVector = if (isSelected) screen.selectedIcon else screen.unselectedIcon,
+                                contentDescription = screen.label
+                            )
+                        },
                         label = { Text(screen.label) },
-                        selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
+                        selected = isSelected,
                         onClick = {
                             navController.navigate(screen.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
@@ -61,7 +77,8 @@ fun AppNavigation() {
                     )
                 }
             }
-        }
+        },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0)
     ) { innerPadding ->
         NavHost(
             navController = navController,

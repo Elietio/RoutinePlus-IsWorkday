@@ -8,7 +8,28 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+
+@Immutable
+data class HolidayColorScheme(
+    val holidayBg: Color,
+    val holidayText: Color,
+    val workdayBg: Color,
+    val workdayText: Color
+)
+
+val LocalHolidayColorScheme = staticCompositionLocalOf {
+    HolidayColorScheme(
+        holidayBg = Color.Unspecified,
+        holidayText = Color.Unspecified,
+        workdayBg = Color.Unspecified,
+        workdayText = Color.Unspecified
+    )
+}
 
 private val LightColorScheme = lightColorScheme(
     primary = md_light_primary,
@@ -76,9 +97,29 @@ fun RoutinePlusTheme(
         else -> LightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = AppTypography,
-        content = content
-    )
+    val holidayColorScheme = if (darkTheme) {
+        HolidayColorScheme(
+            holidayBg = holidayRedDark,
+            holidayText = holidayRedTextDark,
+            workdayBg = workdayGreenDark,
+            workdayText = workdayGreenTextDark
+        )
+    } else {
+        HolidayColorScheme(
+            holidayBg = holidayRedLight,
+            holidayText = holidayRed,
+            workdayBg = workdayGreenLight,
+            workdayText = workdayGreen
+        )
+    }
+
+    CompositionLocalProvider(
+        LocalHolidayColorScheme provides holidayColorScheme
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = AppTypography,
+            content = content
+        )
+    }
 }

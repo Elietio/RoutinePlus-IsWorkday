@@ -1,5 +1,6 @@
 package xyz.elietio.routineplus.isworkday.ui.screen.settings
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,26 +9,35 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MediumTopAppBar
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel = hiltViewModel()
@@ -45,109 +55,156 @@ fun SettingsScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        Text("设置", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(16.dp))
+    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+    Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            MediumTopAppBar(
+                title = { Text("全局设置", style = MaterialTheme.typography.headlineMedium) },
+                actions = {
+                    TextButton(
+                        onClick = { viewModel.save() }
+                    ) {
+                        Text("保存", style = MaterialTheme.typography.labelLarge)
+                    }
+                },
+                scrollBehavior = scrollBehavior,
+                colors = TopAppBarDefaults.mediumTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer
+                )
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = MaterialTheme.colorScheme.background
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("主题设置", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(12.dp))
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    val options = listOf("跟随系统", "浅色", "深色")
-                    options.forEachIndexed { index, label ->
-                        SegmentedButton(
-                            selected = themeMode == index,
-                            onClick = { viewModel.updateThemeMode(index) },
-                            shape = androidx.compose.material3.SegmentedButtonDefaults.itemShape(index = index, count = options.size)
-                        ) {
-                            Text(label)
+            // Theme setting (主题外观)
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ListItem(
+                        headlineContent = { Text("主题设置", style = MaterialTheme.typography.titleMedium) },
+                        supportingContent = {
+                            Text(
+                                text = "选择应用所呈现的配色外观，支持跟随系统自动变暗",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+                        modifier = Modifier.padding(0.dp)
+                    )
+
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        val options = listOf("跟随系统", "浅色模式", "深色模式")
+                        options.forEachIndexed { index, label ->
+                            SegmentedButton(
+                                selected = themeMode == index,
+                                onClick = { viewModel.updateThemeMode(index) },
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size)
+                            ) {
+                                Text(label)
+                            }
                         }
                     }
                 }
             }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
 
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("数据源配置", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(12.dp))
+            // Database configuration (数据源配置)
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ListItem(
+                        headlineContent = { Text("网络数据源", style = MaterialTheme.typography.titleMedium) },
+                        supportingContent = {
+                            Text(
+                                text = "设定法定节假日云端数据的同步端口，应用内建双通道备用容灾机制",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+                        modifier = Modifier.padding(0.dp)
+                    )
 
-                OutlinedTextField(
-                    value = primaryUrl,
-                    onValueChange = { viewModel.updatePrimaryUrl(it) },
-                    label = { Text("主数据源 URL") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
+                    OutlinedTextField(
+                        value = primaryUrl,
+                        onValueChange = { viewModel.updatePrimaryUrl(it) },
+                        label = { Text("主数据源 (推荐 CDN)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.medium
+                    )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = fallbackUrl,
+                        onValueChange = { viewModel.updateFallbackUrl(it) },
+                        label = { Text("备用数据源 (防解析异常)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.medium
+                    )
 
-                OutlinedTextField(
-                    value = fallbackUrl,
-                    onValueChange = { viewModel.updateFallbackUrl(it) },
-                    label = { Text("备用数据源 URL") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "URL 格式示例: https://cdn.jsdelivr.net/gh/NateScarlet/holiday-cn@master",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                )
+                    Text(
+                        text = "数据源必须提供兼容的中国法定节假日 JSON 映射，默认经由高速 CDN 代理拉取。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(
-            onClick = { viewModel.save() },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
-        ) {
-            Text("保存设置")
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("关于", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text("RoutinePlus: IsWorkday", style = MaterialTheme.typography.bodyLarge)
-                Text("版本 1.1.0", style = MaterialTheme.typography.bodyMedium)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "基于中国法定节假日数据，为三星日常程序提供智能闹钟调度。",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "节假日数据源: github.com/NateScarlet/holiday-cn",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                )
+            // About (关于)
+            Card(
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                ),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("关于应用", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text("RoutinePlus: IsWorkday", style = MaterialTheme.typography.titleLarge)
+                    Text("版本 1.3.0 (M3 Redesign)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = "本应用专为三星 Bixby 日常程序 (Modes & Routines) 构建，通过静态 Shortcut 入口无缝拉起高度自定义的“是否工作日”条件逻辑校验，免去用户复杂手动维护的烦恼，实现闹钟智能跳过及日程静音控制。",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Text(
+                        text = "默认节假日数据由 NateScarlet/holiday-cn 开源仓库维护，特此致谢。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
             }
-        }
 
-        SnackbarHost(hostState = snackbarHostState)
+            Spacer(modifier = Modifier.height(16.dp))
+        }
     }
 }

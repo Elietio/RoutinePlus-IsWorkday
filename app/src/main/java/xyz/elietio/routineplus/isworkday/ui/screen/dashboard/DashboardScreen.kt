@@ -21,15 +21,20 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.CloudDone
+import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -59,8 +64,8 @@ import java.time.temporal.ChronoUnit
 import androidx.hilt.navigation.compose.hiltViewModel
 import xyz.elietio.routineplus.isworkday.ui.component.CalendarGrid
 import xyz.elietio.routineplus.isworkday.ui.component.CalendarLegend
-import xyz.elietio.routineplus.isworkday.ui.component.StatusCard
 import java.time.LocalDate
+import java.time.Instant
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -103,58 +108,102 @@ fun DashboardScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        StatusCard(
-            lastSyncTime = lastSyncTime,
-            isSyncing = isSyncing,
-            onSyncClick = { viewModel.sync() }
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Month navigation
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+    Scaffold(
+        topBar = {
+            MediumTopAppBar(
+                title = {
+                    Column {
+                        Text("IsWorkday", fontWeight = FontWeight.Bold)
+                        Text(
+                            text = currentMonth.format(monthFormatter),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { viewModel.navigateMonth(-1) }) {
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "上一月")
+                    }
+                    IconButton(onClick = { viewModel.navigateMonth(1) }) {
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "下一月")
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    if (isSyncing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp).padding(4.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        IconButton(onClick = { viewModel.sync() }) {
+                            Icon(
+                                imageVector = if (lastSyncTime != null) Icons.Default.CloudDone else Icons.Default.CloudOff,
+                                contentDescription = "同步"
+                            )
+                        }
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 8.dp)
         ) {
-            IconButton(onClick = { viewModel.navigateMonth(-1) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, "上一月")
+            // Precise Sync Notification Banner (Lightweight M3 Card)
+            val currentLastSyncTime = lastSyncTime
+            if (currentLastSyncTime != null && currentLastSyncTime > 0L) {
+                val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
+                    .withZone(java.time.ZoneId.of("Asia/Shanghai"))
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.CloudDone,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "节假日数据已同步 (上次: ${formatter.format(Instant.ofEpochMilli(currentLastSyncTime))})",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
-            Text(
-                text = currentMonth.format(monthFormatter),
-                style = MaterialTheme.typography.titleLarge,
-                textAlign = TextAlign.Center
-            )
-            IconButton(onClick = { viewModel.navigateMonth(1) }) {
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, "下一月")
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier.fillMaxWidth()
+            ) { page ->
+                val pageMonth = initialMonth.plusMonths((page - initialPage).toLong())
+                CalendarGrid(
+                    yearMonth = pageMonth,
+                    holidays = holidays,
+                    overridesMap = overridesMap,
+                    selectedDates = selectedDates,
+                    onDayClick = { viewModel.toggleDateSelection(it) }
+                )
             }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            CalendarLegend()
         }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        HorizontalPager(
-            state = pagerState,
-            modifier = Modifier.fillMaxWidth()
-        ) { page ->
-            val pageMonth = initialMonth.plusMonths((page - initialPage).toLong())
-            CalendarGrid(
-                yearMonth = pageMonth,
-                holidays = holidays,
-                overridesMap = overridesMap,
-                selectedDates = selectedDates,
-                onDayClick = { viewModel.toggleDateSelection(it) }
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        CalendarLegend()
     }
 
     // Bottom sheet for day details and custom configurations

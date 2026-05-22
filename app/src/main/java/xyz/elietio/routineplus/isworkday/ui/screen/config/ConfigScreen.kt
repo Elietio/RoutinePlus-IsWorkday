@@ -13,16 +13,14 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
@@ -33,6 +31,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -40,8 +39,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -65,11 +64,29 @@ fun ConfigScreen(
     }
 
     var showTimePicker by remember { mutableStateOf(false) }
-    var conditionExpanded by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text("规则配置", style = MaterialTheme.typography.titleLarge) },
+                actions = {
+                    TextButton(
+                        onClick = {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar("配置已保存")
+                            }
+                        }
+                    ) {
+                        Text("保存", style = MaterialTheme.typography.labelLarge)
+                    }
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        },
         snackbarHost = { SnackbarHost(snackbarHostState) },
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
@@ -78,141 +95,144 @@ fun ConfigScreen(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-        Text("规则配置", style = MaterialTheme.typography.headlineMedium)
-        Spacer(modifier = Modifier.height(16.dp))
+            // Target offset (校验目标)
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    ListItem(
+                        headlineContent = { Text("校验目标", style = MaterialTheme.typography.titleMedium) },
+                        supportingContent = {
+                            Text(
+                                text = if (config.targetOffset == 0) "\"今天\"适用于跨零点后的凌晨触发"
+                                else "\"明天\"适用于睡前触发",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+                        modifier = Modifier.padding(0.dp)
+                    )
 
-        // Target offset
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("校验目标", style = MaterialTheme.typography.titleMedium)
-                Text(
-                    text = if (config.targetOffset == 0) "\"今天\"适用于跨零点后的凌晨触发"
-                    else "\"明天\"适用于睡前触发",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
-                    SegmentedButton(
-                        selected = config.targetOffset == 0,
-                        onClick = { viewModel.updateTargetOffset(0) },
-                        shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                    ) { Text("今天 Today") }
-                    SegmentedButton(
-                        selected = config.targetOffset == 1,
-                        onClick = { viewModel.updateTargetOffset(1) },
-                        shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                    ) { Text("明天 Tomorrow") }
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        SegmentedButton(
+                            selected = config.targetOffset == 0,
+                            onClick = { viewModel.updateTargetOffset(0) },
+                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                        ) { Text("今天 Today") }
+                        SegmentedButton(
+                            selected = config.targetOffset == 1,
+                            onClick = { viewModel.updateTargetOffset(1) },
+                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                        ) { Text("明天 Tomorrow") }
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Condition mode
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("判定条件", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-                ExposedDropdownMenuBox(
-                    expanded = conditionExpanded,
-                    onExpandedChange = { conditionExpanded = it }
+            // Condition mode (判定条件)
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    OutlinedTextField(
-                        value = when (config.conditionMode) {
-                            ConditionMode.WORKDAY -> "仅工作日"
-                            ConditionMode.OFFDAY -> "仅休息日"
-                            ConditionMode.ALWAYS -> "每天"
-                        },
-                        onValueChange = {},
-                        readOnly = true,
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = conditionExpanded) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
-                    )
-                    ExposedDropdownMenu(
-                        expanded = conditionExpanded,
-                        onDismissRequest = { conditionExpanded = false }
-                    ) {
-                        ConditionMode.entries.forEach { mode ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        when (mode) {
-                                            ConditionMode.WORKDAY -> "仅工作日"
-                                            ConditionMode.OFFDAY -> "仅休息日"
-                                            ConditionMode.ALWAYS -> "每天"
-                                        }
-                                    )
-                                },
-                                onClick = {
-                                    viewModel.updateConditionMode(mode)
-                                    conditionExpanded = false
-                                }
+                    ListItem(
+                        headlineContent = { Text("判定条件", style = MaterialTheme.typography.titleMedium) },
+                        supportingContent = {
+                            Text(
+                                text = "满足选定的判断逻辑时，日常程序才会继续执行",
+                                style = MaterialTheme.typography.bodySmall
                             )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+                        modifier = Modifier.padding(0.dp)
+                    )
+
+                    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+                        ConditionMode.entries.forEachIndexed { index, mode ->
+                            SegmentedButton(
+                                selected = config.conditionMode == mode,
+                                onClick = { viewModel.updateConditionMode(mode) },
+                                shape = SegmentedButtonDefaults.itemShape(index = index, count = ConditionMode.entries.size)
+                            ) {
+                                Text(
+                                    when (mode) {
+                                        ConditionMode.WORKDAY -> "仅工作日"
+                                        ConditionMode.OFFDAY -> "仅休息日"
+                                        ConditionMode.ALWAYS -> "每天"
+                                    }
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Alarm time
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("闹钟设定", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            // Alarm time (闹钟设定)
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text(
-                        text = "${config.hour}:${config.minute.toString().padStart(2, '0')}",
-                        style = MaterialTheme.typography.displayLarge
+                    ListItem(
+                        headlineContent = { Text("闹钟触发设定", style = MaterialTheme.typography.titleMedium) },
+                        supportingContent = {
+                            Text(
+                                text = "此闹钟仅作为触发容器，在设定时刻拉起本判定逻辑",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        },
+                        colors = ListItemDefaults.colors(containerColor = androidx.compose.ui.graphics.Color.Transparent),
+                        modifier = Modifier.padding(0.dp)
                     )
-                    TextButton(onClick = { showTimePicker = true }) {
-                        Text("修改时间")
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Alarm,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = "${config.hour}:${config.minute.toString().padStart(2, '0')}",
+                                style = MaterialTheme.typography.headlineLarge,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        OutlinedButton(
+                            onClick = { showTimePicker = true }
+                        ) {
+                            Text("修改时间")
+                        }
                     }
+
+                    OutlinedTextField(
+                        value = labelInput,
+                        onValueChange = { labelInput = it },
+                        label = { Text("闹钟标签") },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = MaterialTheme.shapes.medium
+                    )
                 }
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = labelInput,
-                    onValueChange = { labelInput = it },
-                    label = { Text("闹钟标签") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
             }
-        }
 
-        Spacer(modifier = Modifier.height(24.dp))
-
-        ExtendedFloatingActionButton(
-            onClick = { 
-                coroutineScope.launch {
-                    snackbarHostState.showSnackbar("配置已保存")
-                }
-            },
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-        ) {
-            Text("保存配置")
-        }
+            Spacer(modifier = Modifier.height(16.dp))
         }
     }
 
@@ -224,8 +244,15 @@ fun ConfigScreen(
         )
         AlertDialog(
             onDismissRequest = { showTimePicker = false },
-            title = { Text("选择时间") },
-            text = { TimePicker(state = timePickerState) },
+            title = { Text("选择触发时间", style = MaterialTheme.typography.titleMedium) },
+            text = {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    TimePicker(state = timePickerState)
+                }
+            },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.updateTime(timePickerState.hour, timePickerState.minute)
@@ -234,7 +261,9 @@ fun ConfigScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showTimePicker = false }) { Text("取消") }
-            }
+            },
+            shape = MaterialTheme.shapes.extraLarge,
+            tonalElevation = 6.dp
         )
     }
 }
