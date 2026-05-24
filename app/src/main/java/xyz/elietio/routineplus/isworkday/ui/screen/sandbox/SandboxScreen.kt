@@ -82,7 +82,15 @@ fun SandboxScreen(
             confirmButton = {
                 TextButton(onClick = {
                     showRealTestConfirm = false
-                    viewModel.runRealTest(AlarmConfig(targetOffset, conditionMode, 8, 30, "测试闹钟"))
+                    viewModel.runRealTest(
+                        AlarmConfig(
+                            targetOffset = targetOffset,
+                            conditionMode = conditionMode,
+                            hour = 8,
+                            minute = 30,
+                            label = "测试闹钟"
+                        )
+                    )
                 }) { Text("确定") }
             },
             dismissButton = {
