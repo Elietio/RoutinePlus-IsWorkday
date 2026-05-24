@@ -8,7 +8,7 @@ import androidx.lifecycle.lifecycleScope
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import xyz.elietio.routineplus.isworkday.data.repository.ConfigRepository
+import xyz.elietio.routineplus.isworkday.data.repository.AlarmRepository
 import xyz.elietio.routineplus.isworkday.domain.model.DayType
 import xyz.elietio.routineplus.isworkday.domain.usecase.CheckDayTypeUseCase
 import xyz.elietio.routineplus.isworkday.domain.usecase.SetAlarmUseCase
@@ -28,7 +28,7 @@ class ShortcutActivity : ComponentActivity() {
     @Inject lateinit var setAlarmUseCase: SetAlarmUseCase
     @Inject lateinit var checkDayTypeUseCase: CheckDayTypeUseCase
     @Inject lateinit var syncHolidayUseCase: SyncHolidayUseCase
-    @Inject lateinit var configRepository: ConfigRepository
+    @Inject lateinit var alarmRepository: AlarmRepository
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -49,41 +49,52 @@ class ShortcutActivity : ComponentActivity() {
         lifecycleScope.launch {
             try {
                 withTimeoutOrNull(5000) {
-                    // 从 DataStore 读取用户保存的配置
-                    val config = configRepository.getAlarmConfig()
-                    
-                    Log.i(TAG, "Execute config: offset=${config.targetOffset}, mode=${config.conditionMode}, " +
-                            "time=${config.hour}:${config.minute}, label=${config.label}")
-
-                    // Step 1: 判定日期类型
-                    val chinaZone = ZoneId.of("Asia/Shanghai")
-                    val targetDate = LocalDate.now(chinaZone).plusDays(config.targetOffset.toLong())
-                    val dayType = checkDayTypeUseCase(config.targetOffset)
-
-                    val offsetLabel = if (config.targetOffset == 0) "今天" else "明天"
-                    val dayTypeLabel = when (dayType) {
-                        DayType.WORKDAY -> "工作日"
-                        DayType.OFFDAY -> "休息日"
-                        DayType.NORMAL -> "普通日"
+                    val enabledAlarms = alarmRepository.getEnabledAlarms()
+                    if (enabledAlarms.isEmpty()) {
+                        Log.i(TAG, "No enabled alarms found")
+                        showToast("未检测到已启用的闹钟")
+                        return@withTimeoutOrNull
                     }
 
-                    Log.i(TAG, "Day check: $targetDate ($offsetLabel) -> $dayTypeLabel")
-                    showToast("$offsetLabel $targetDate: $dayTypeLabel")
+                    Log.i(TAG, "Execute started for ${enabledAlarms.size} enabled alarms")
 
-                    // Step 2: 执行闹钟逻辑
-                    val result = setAlarmUseCase(config)
-                    Log.i(TAG, "Alarm result: shouldSet=${result.shouldSetAlarm}, " +
-                            "alarmSet=${result.alarmSet}, message=${result.message}")
+                    var successCount = 0
+                    var skipCount = 0
+                    var failCount = 0
 
-                    // Step 3: 显示结果 Toast (纯文字无符号)
-                    val timeStr = "${config.hour}:${config.minute.toString().padStart(2, '0')}"
-                    if (result.alarmSet) {
-                        showToast("闹钟已设置: $timeStr - ${config.label}")
-                    } else if (!result.shouldSetAlarm) {
-                        showToast("已跳过: $dayTypeLabel 不符合触发条件")
-                    } else {
-                        showToast("闹钟创建失败: ${result.message}")
+                    for (config in enabledAlarms) {
+                        Log.i(
+                            TAG, "Processing alarm: id=${config.id}, mode=${config.conditionMode}, " +
+                                    "time=${config.hour}:${config.minute}, label=${config.label}"
+                        )
+                        val result = setAlarmUseCase(config)
+                        Log.i(
+                            TAG, "Alarm result: label=${config.label}, shouldSet=${result.shouldSetAlarm}, " +
+                                    "alarmSet=${result.alarmSet}, message=${result.message}"
+                        )
+
+                        if (result.alarmSet) {
+                            successCount++
+                        } else if (!result.shouldSetAlarm) {
+                            skipCount++
+                        } else {
+                            failCount++
+                        }
                     }
+
+                    val resultMsg = buildString {
+                        append("闹钟判定完毕：已设置 ")
+                        append(successCount)
+                        append(" 个，跳过 ")
+                        append(skipCount)
+                        append(" 个")
+                        if (failCount > 0) {
+                            append("，失败 ")
+                            append(failCount)
+                            append(" 个")
+                        }
+                    }
+                    showToast(resultMsg)
                 } ?: run {
                     Log.w(TAG, "Execute timeout after 5000ms")
                     showToast("执行超时已结束")

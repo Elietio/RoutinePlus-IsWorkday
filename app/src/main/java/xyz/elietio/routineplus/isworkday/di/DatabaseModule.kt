@@ -7,6 +7,7 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import xyz.elietio.routineplus.isworkday.data.local.AlarmDao
 import xyz.elietio.routineplus.isworkday.data.local.AppDatabase
 import xyz.elietio.routineplus.isworkday.data.local.HolidayDao
 import javax.inject.Singleton
@@ -23,12 +24,17 @@ object DatabaseModule {
             AppDatabase::class.java,
             "holiday_database"
         )
-            .addMigrations(AppDatabase.MIGRATION_1_2)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3)
             .build()
     }
 
     @Provides
     fun provideHolidayDao(database: AppDatabase): HolidayDao {
         return database.holidayDao()
+    }
+
+    @Provides
+    fun provideAlarmDao(database: AppDatabase): AlarmDao {
+        return database.alarmDao()
     }
 }

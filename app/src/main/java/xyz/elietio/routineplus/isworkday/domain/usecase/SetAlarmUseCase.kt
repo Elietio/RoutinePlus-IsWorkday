@@ -5,7 +5,7 @@ import android.content.Intent
 import android.provider.AlarmClock
 import dagger.hilt.android.qualifiers.ApplicationContext
 import xyz.elietio.routineplus.isworkday.R
-import xyz.elietio.routineplus.isworkday.data.repository.ConfigRepository
+import xyz.elietio.routineplus.isworkday.data.repository.AlarmRepository
 import xyz.elietio.routineplus.isworkday.data.repository.HolidayRepository
 import xyz.elietio.routineplus.isworkday.domain.model.AlarmConfig
 import xyz.elietio.routineplus.isworkday.domain.model.ConditionMode
@@ -18,7 +18,7 @@ class SetAlarmUseCase @Inject constructor(
     @ApplicationContext private val context: Context,
     private val checkDayType: CheckDayTypeUseCase,
     private val repository: HolidayRepository,
-    private val configRepository: ConfigRepository
+    private val alarmRepository: AlarmRepository
 ) {
     private val chinaZone = ZoneId.of("Asia/Shanghai")
 
@@ -78,13 +78,11 @@ class SetAlarmUseCase @Inject constructor(
         }
 
         // ── Idempotence & Anti-Flicker Protection ──
-        val lastAlarm = configRepository.getLastAlarmInfo()
-        val timeDiff = System.currentTimeMillis() - lastAlarm.timestamp
-        val isSameDate = lastAlarm.date == targetDate.toString()
-        val isSameTime = lastAlarm.hour == alarmHour && lastAlarm.minute == alarmMinute
-        val isSameLabel = lastAlarm.label == config.label
+        val timeDiff = System.currentTimeMillis() - config.lastAlarmTimestamp
+        val isSameDate = config.lastAlarmDate == targetDate.toString()
+        val isSameTime = config.hour == alarmHour && config.minute == alarmMinute
 
-        if ((isSameDate && isSameTime && isSameLabel) || timeDiff < 5000L) {
+        if ((isSameDate && isSameTime) || timeDiff < 5000L) {
             val duplicateMsg = if (timeDiff < 5000L) {
                 "触发过频，防闪烁拦截: ${alarmHour}:${alarmMinute.toString().padStart(2, '0')}"
             } else {
@@ -109,14 +107,11 @@ class SetAlarmUseCase @Inject constructor(
             }
             context.startActivity(intent)
 
-            // Cache successful alarm setup parameters
-            configRepository.saveLastAlarmInfo(
-                ConfigRepository.LastAlarmInfo(
-                    date = targetDate.toString(),
-                    hour = alarmHour,
-                    minute = alarmMinute,
-                    label = config.label,
-                    timestamp = System.currentTimeMillis()
+            // Cache successful alarm setup parameters directly into Room
+            alarmRepository.updateAlarm(
+                config.copy(
+                    lastAlarmDate = targetDate.toString(),
+                    lastAlarmTimestamp = System.currentTimeMillis()
                 )
             )
 
