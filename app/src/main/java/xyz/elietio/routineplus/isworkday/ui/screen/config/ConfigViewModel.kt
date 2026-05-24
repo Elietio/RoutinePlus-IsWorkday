@@ -71,10 +71,16 @@ class ConfigViewModel @Inject constructor(
             var skipCount = 0
             var failCount = 0
 
-            for (config in enabledAlarms) {
+            val enabledAlarmsSize = enabledAlarms.size
+            for (i in 0 until enabledAlarmsSize) {
+                val config = enabledAlarms[i]
                 val result = setAlarmUseCase(config)
                 if (result.alarmSet) {
                     successCount++
+                    // 批量连发测试时，在两个 Intent 之间引入 1000ms 间隔保护，防止系统级覆盖
+                    if (i < enabledAlarmsSize - 1) {
+                        kotlinx.coroutines.delay(1000L)
+                    }
                 } else if (!result.shouldSetAlarm) {
                     skipCount++
                 } else {

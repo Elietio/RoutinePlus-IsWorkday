@@ -48,7 +48,7 @@ class ShortcutActivity : ComponentActivity() {
     private fun handleExecute() {
         lifecycleScope.launch {
             try {
-                withTimeoutOrNull(5000) {
+                withTimeoutOrNull(10000) {
                     val enabledAlarms = alarmRepository.getEnabledAlarms()
                     if (enabledAlarms.isEmpty()) {
                         Log.i(TAG, "No enabled alarms found")
@@ -62,7 +62,9 @@ class ShortcutActivity : ComponentActivity() {
                     var skipCount = 0
                     var failCount = 0
 
-                    for (config in enabledAlarms) {
+                    val enabledAlarmsSize = enabledAlarms.size
+                    for (i in 0 until enabledAlarmsSize) {
+                        val config = enabledAlarms[i]
                         Log.i(
                             TAG, "Processing alarm: id=${config.id}, mode=${config.conditionMode}, " +
                                     "time=${config.hour}:${config.minute}, label=${config.label}"
@@ -75,6 +77,13 @@ class ShortcutActivity : ComponentActivity() {
 
                         if (result.alarmSet) {
                             successCount++
+                            // 如果还有后续的闹钟需要继续判定处理，在向系统时钟成功发送前一个 Intent 后，
+                            // 必须主动延迟一秒（1000ms），为系统时钟处理异步 Activity 启动留出充足窗口，
+                            // 从而防止前一个请求被后面紧随的 Intent 发生物理覆盖或被系统吞掉。
+                            if (i < enabledAlarmsSize - 1) {
+                                Log.i(TAG, "Delaying 1000ms before processing the next alarm to avoid system overlapping")
+                                kotlinx.coroutines.delay(1000L)
+                            }
                         } else if (!result.shouldSetAlarm) {
                             skipCount++
                         } else {
@@ -96,7 +105,7 @@ class ShortcutActivity : ComponentActivity() {
                     }
                     showToast(resultMsg)
                 } ?: run {
-                    Log.w(TAG, "Execute timeout after 5000ms")
+                    Log.w(TAG, "Execute timeout after 10000ms")
                     showToast("执行超时已结束")
                 }
             } catch (e: Exception) {
