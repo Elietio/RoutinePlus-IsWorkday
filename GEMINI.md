@@ -10,7 +10,7 @@
 
 ## 2. 三星日常程序集成规范
 - **禁止动态快捷方式**：三星“模式与日常程序”对动态 Shortcut 的支持存在兼容性问题。我们**只使用静态 Shortcut** (定义在 `shortcuts.xml` 中)。
-- **参数传递策略**：静态 Shortcut 无法动态传递 Intent Extra 参数。所有用户配置的执行参数（如闹钟时间、判断条件等）必须保存在 **DataStore (`ConfigRepository`)** 中。Shortcut 被触发后，由 `ShortcutActivity` 异步读取 DataStore 获取配置并执行逻辑。
+- **参数传递策略**：静态 Shortcut 无法动态传递 Intent Extra 参数。所有用户配置的多闹钟执行参数（如闹钟时间、判断条件、开关状态等）必须保存在 **Room 数据库 (`alarms` 数据表)** 中。当被触发后，由 `ShortcutActivity` 异步批量读取所有已启用的闹钟实体，迭代评估判定并批量设定系统闹钟。全局通用设置（如主题外观、CDN 地址等）则继续保存在 DataStore 中。
 - **透明执行**：快捷方式的入口为 `ShortcutActivity`，该 Activity 必须使用透明主题 (`Theme.RoutinePlus.Transparent`) 且在执行完毕后立刻 `finish()`，做到对用户的零视觉打扰。
 
 ## 3. 日期计算与时区
