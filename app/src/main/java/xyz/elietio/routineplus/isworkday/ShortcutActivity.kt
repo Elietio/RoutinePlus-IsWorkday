@@ -63,6 +63,7 @@ class ShortcutActivity : ComponentActivity() {
                     var failCount = 0
 
                     val enabledAlarmsSize = enabledAlarms.size
+                    var lastAlarmSet = false
                     for (i in 0 until enabledAlarmsSize) {
                         val config = enabledAlarms[i]
                         Log.i(
@@ -75,6 +76,7 @@ class ShortcutActivity : ComponentActivity() {
                                     "alarmSet=${result.alarmSet}, message=${result.message}"
                         )
 
+                        lastAlarmSet = result.alarmSet
                         if (result.alarmSet) {
                             successCount++
                             // 如果还有后续的闹钟需要继续判定处理，在向系统时钟成功发送前一个 Intent 后，
@@ -89,6 +91,11 @@ class ShortcutActivity : ComponentActivity() {
                         } else {
                             failCount++
                         }
+                    }
+
+                    if (lastAlarmSet) {
+                        Log.i(TAG, "Delaying 1200ms at the end to let the last system alarm toast show first")
+                        kotlinx.coroutines.delay(1200L)
                     }
 
                     val resultMsg = buildString {

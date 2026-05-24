@@ -216,7 +216,7 @@ fun SettingsScreen(
                     Spacer(modifier = Modifier.height(4.dp))
                     
                     Text("RoutinePlus: IsWorkday", style = MaterialTheme.typography.titleLarge)
-                    Text("版本 1.3.7 (M3 Redesign)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text("版本 1.3.8 (M3 Redesign)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     
                     Spacer(modifier = Modifier.height(4.dp))
                     
