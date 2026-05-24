@@ -77,18 +77,12 @@ class SetAlarmUseCase @Inject constructor(
             )
         }
 
-        // ── Idempotence & Anti-Flicker Protection ──
+        // ── Anti-Flicker Protection (5秒防高频连击时间墙) ──
         val timeDiff = System.currentTimeMillis() - config.lastAlarmTimestamp
-        val isSameDate = config.lastAlarmDate == targetDate.toString()
-        val isSameTime = config.hour == alarmHour && config.minute == alarmMinute
 
-        if ((isSameDate && isSameTime) || timeDiff < 5000L) {
-            val duplicateMsg = if (timeDiff < 5000L) {
-                "触发过频，防闪烁拦截: ${alarmHour}:${alarmMinute.toString().padStart(2, '0')}"
-            } else {
-                "闹钟已就绪: ${alarmHour}:${alarmMinute.toString().padStart(2, '0')}"
-            }
-            android.util.Log.i("SetAlarmUseCase", "Idempotence / Anti-Flicker protection triggered: $duplicateMsg")
+        if (timeDiff < 5000L) {
+            val duplicateMsg = "触发过频，防闪烁拦截: ${alarmHour}:${alarmMinute.toString().padStart(2, '0')}"
+            android.util.Log.i("SetAlarmUseCase", "Anti-Flicker protection triggered: $duplicateMsg")
             return ExecutionResult(
                 dayType = dayType,
                 shouldSetAlarm = true,
